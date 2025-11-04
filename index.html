@@ -1,0 +1,1711 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Granja Avícola</title>
+    <!-- Carga de Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Carga de Feather Icons -->
+    <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
+    <!-- Carga de Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <style>
+        /* Estilos personalizados */
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .nav-tab {
+            @apply px-4 py-3 text-sm font-medium text-gray-600 rounded-lg hover:bg-green-100 hover:text-green-700 transition-colors duration-200;
+        }
+        .nav-tab.active {
+            @apply bg-green-600 text-white shadow-lg;
+        }
+        .app-section {
+            @apply p-4 md:p-8;
+        }
+        .stat-card {
+            @apply bg-white p-6 rounded-xl shadow-lg flex items-center space-x-4;
+        }
+        .form-input {
+            @apply w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500;
+        }
+        /* Estilo para Select */
+        .form-select {
+            @apply w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 bg-white appearance-none;
+        }
+        /* Estilos para el Modal */
+        .modal {
+            @apply fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center p-4 transition-opacity duration-300 opacity-0 pointer-events-none;
+        }
+        .modal-open {
+            @apply opacity-100 pointer-events-auto;
+        }
+        .modal-content {
+            @apply bg-white rounded-xl shadow-2xl w-full max-w-2xl transform scale-95 transition-transform duration-300;
+        }
+        .modal-open .modal-content {
+            @apply scale-100;
+        }
+        
+        /* Estilos para el Modal de Confirmación */
+        .confirm-modal {
+            @apply fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center p-4 transition-opacity duration-300 opacity-0 pointer-events-none;
+        }
+        .confirm-modal-open {
+            @apply opacity-100 pointer-events-auto;
+        }
+        .confirm-modal-content {
+            @apply bg-white rounded-xl shadow-2xl w-full max-w-md p-8 transform scale-95 transition-transform duration-300;
+        }
+        .confirm-modal-open .confirm-modal-content {
+            @apply scale-100;
+        }
+
+        /* Estilo para el Toast/Notificación */
+        .toast {
+            @apply fixed top-5 right-5 bg-green-600 text-white px-6 py-4 rounded-xl shadow-lg transform translate-x-full transition-transform duration-300;
+        }
+        .toast.show {
+            @apply translate-x-0;
+        }
+        .toast.error {
+            @apply bg-red-600;
+        }
+        
+        /* Estilos para las listas de configuración */
+        .settings-list-item {
+            @apply flex justify-between items-center p-3 bg-gray-50 rounded-lg border border-gray-200;
+        }
+        .delete-btn {
+            @apply text-gray-400 hover:text-red-500 transition-colors duration-200;
+        }
+        /* NUEVO: Estilos para el contenedor de checkboxes */
+        .checkbox-container {
+            @apply grid grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-2;
+        }
+        .checkbox-label {
+            @apply flex items-center space-x-2 text-sm font-medium text-gray-700 cursor-pointer;
+        }
+        .checkbox-input {
+            @apply w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800">
+
+    <!-- Contenedor Principal -->
+    <div class="flex flex-col min-h-screen">
+
+        <!-- Encabezado -->
+        <header class="bg-white shadow-md w-full">
+            <div class="container mx-auto px-6 py-4 flex justify-between items-center">
+                <div class="flex items-center space-x-2">
+                    <i data-feather="grid" class="text-green-600 w-8 h-8"></i>
+                    <h1 class="text-2xl font-bold text-gray-800">Gestión Avícola (Local)</h1>
+                </div>
+                <!-- Navegación Principal -->
+                <nav class="flex items-center space-x-1 flex-wrap">
+                    <button id="nav-dashboard" class="nav-tab active" data-section="dashboard-section">
+                        <i data-feather="home" class="inline-block w-5 h-5 mr-1"></i> Dashboard
+                    </button>
+                    <button id="nav-records" class="nav-tab" data-section="records-section">
+                        <i data-feather="clipboard" class="inline-block w-5 h-5 mr-1"></i> Registros Diarios
+                    </button>
+                    <button id="nav-lots" class="nav-tab" data-section="lots-section">
+                        <i data-feather="archive" class="inline-block w-5 h-5 mr-1"></i> Lotes / Corrales
+                    </button>
+                    <button id="nav-sales" class="nav-tab" data-section="sales-section">
+                        <i data-feather="dollar-sign" class="inline-block w-5 h-5 mr-1"></i> Ventas
+                    </button>
+                    <button id="nav-purchases" class="nav-tab" data-section="purchases-section">
+                        <i data-feather="truck" class="inline-block w-5 h-5 mr-1"></i> Compras (Insumos)
+                    </button>
+                    <button id="nav-reports" class="nav-tab" data-section="reports-section">
+                        <i data-feather="download" class="inline-block w-5 h-5 mr-1"></i> Reportes
+                    </button>
+                    <!-- NUEVA Pestaña Configuración -->
+                    <button id="nav-settings" class="nav-tab" data-section="settings-section">
+                        <i data-feather="settings" class="inline-block w-5 h-5 mr-1"></i> Configuración
+                    </button>
+                </nav>
+            </div>
+        </header>
+
+        <!-- Contenido Principal -->
+        <main class="container mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-grow">
+
+            <!-- SECCIÓN 1: DASHBOARD -->
+            <section id="dashboard-section" class="app-section">
+                <h2 class="text-2xl font-bold text-gray-800 mb-6">Dashboard de Métricas</h2>
+                
+                <!-- Tarjetas de Estadísticas -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                    <!-- Tarjeta: Total Gallinas -->
+                    <div class="bg-white p-6 rounded-xl shadow-lg flex items-center space-x-4">
+                        <div class="p-3 rounded-full bg-blue-100 text-blue-600">
+                            <i data-feather="users" class="w-6 h-6"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm font-medium text-gray-500">Total Animales</p>
+                            <p class="text-3xl font-bold text-gray-900"><span id="stat-total-hens">0</span></p>
+                        </div>
+                    </div>
+                    <!-- Tarjeta: Stock Alimento -->
+                    <div class="bg-white p-6 rounded-xl shadow-lg flex items-center space-x-4">
+                        <div class="p-3 rounded-full bg-yellow-100 text-yellow-600">
+                            <i data-feather="package" class="w-6 h-6"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm font-medium text-gray-500">Stock Alimento</p>
+                            <p class="text-3xl font-bold text-gray-900"><span id="stat-feed-stock">0</span> kg</p>
+                        </div>
+                    </div>
+                    <!-- Tarjeta: Huevos Hoy -->
+                    <div class="bg-white p-6 rounded-xl shadow-lg flex items-center space-x-4">
+                        <div class="p-3 rounded-full bg-green-100 text-green-600">
+                            <i data-feather="egg" class="w-6 h-6"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm font-medium text-gray-500">Huevos Cosechados (Hoy)</p>
+                            <p class="text-3xl font-bold text-gray-900"><span id="stat-eggs-today">0</span></p>
+                        </div>
+                    </div>
+                    <!-- Tarjeta: Huevos en Stock -->
+                    <div class="bg-white p-6 rounded-xl shadow-lg flex items-center space-x-4">
+                        <div class="p-3 rounded-full bg-cyan-100 text-cyan-600">
+                            <i data-feather="box" class="w-6 h-6"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm font-medium text-gray-500">Huevos en Stock (Venta)</p>
+                            <p class="text-3xl font-bold text-gray-900"><span id="stat-egg-stock">0</span></p>
+                        </div>
+                    </div>
+                    <!-- Tarjeta: Días Restantes -->
+                    <div class="bg-white p-6 rounded-xl shadow-lg flex items-center space-x-4">
+                        <div class="p-3 rounded-full bg-red-100 text-red-600">
+                            <i data-feather="calendar" class="w-6 h-6"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm font-medium text-gray-500">Días de Alimento Restantes</d>
+                            <p class="text-3xl font-bold text-gray-900"><span id="stat-days-remaining">0</span> <span class="text-lg">días</span></p>
+                        </div>
+                    </div>
+                    <!-- Tarjeta: Ventas Hoy -->
+                    <div class="bg-white p-6 rounded-xl shadow-lg flex items-center space-x-4">
+                        <div class="p-3 rounded-full bg-indigo-100 text-indigo-600">
+                            <i data-feather="bar-chart-2" class="w-6 h-6"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm font-medium text-gray-500">Ventas (Hoy)</p>
+                            <p class="text-3xl font-bold text-gray-900">$<span id="stat-sales-today">0</span></p>
+                        </div>
+                    </div>
+                    <!-- Tarjeta: Balance Económico (Mensual) -->
+                    <div class="bg-white p-6 rounded-xl shadow-lg flex items-center space-x-4">
+                        <div class="p-3 rounded-full bg-teal-100 text-teal-600">
+                            <i data-feather="trending-up" class="w-6 h-6"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm font-medium text-gray-500">Balance (Mes Actual)</p>
+                            <p class="text-3xl font-bold text-gray-900">$<span id="stat-balance-month">0</span></p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Área de Gráficos -->
+                <div class="bg-white p-6 rounded-xl shadow-lg mb-8">
+                    <h3 class="text-xl font-bold text-gray-800 mb-4">Análisis de Producción (Huevos por Mes)</h3>
+                    <div class="h-80">
+                        <canvas id="productionChart"></canvas>
+                    </div>
+                </div>
+                
+                <!-- Área de Gráficos de Ventas -->
+                <div class="bg-white p-6 rounded-xl shadow-lg">
+                    <h3 class="text-xl font-bold text-gray-800 mb-4">Análisis de Ventas (Total Huevos por Cliente)</h3>
+                    <div class="h-80">
+                        <canvas id="salesChart"></canvas>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- SECCIÓN 2: REGISTROS DIARIOS -->
+            <section id="records-section" class="app-section hidden">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    
+                    <!-- Columna 1: Carga de Datos Diarios -->
+                    <div class="bg-white p-6 rounded-xl shadow-lg">
+                        <h2 class="text-2xl font-bold text-gray-800 mb-6">Registro Diario</h2>
+                        <form id="daily-record-form" class="space-y-6">
+                            <div>
+                                <label for="recordDate" class="block text-sm font-medium text-gray-700 mb-1">Fecha</label>
+                                <input type="date" id="recordDate" class="form-input" required>
+                            </div>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div>
+                                    <label for="eggsHarvested" class="block text-sm font-medium text-gray-700 mb-1">Huevos Cosechados</label>
+                                    <input type="number" id="eggsHarvested" class="form-input" placeholder="0" required>
+                                </div>
+                                <div>
+                                    <label for="feedSupplied" class="block text-sm font-medium text-gray-700 mb-1">Alimento Suministrado (kg)</label>
+                                    <input type="number" step="0.1" id="feedSupplied" class="form-input" placeholder="0.0 kg" required>
+                                </div>
+                            </div>
+                            <div>
+                                <!-- CAMBIADO a Select -->
+                                <label for="recordResponsible" class="block text-sm font-medium text-gray-700 mb-1">Docente / Responsable</label>
+                                <select id="recordResponsible" class="form-select" required>
+                                    <option value="">-- Seleccionar --</option>
+                                    <!-- Opciones se cargarán dinámicamente -->
+                                </select>
+                            </div>
+
+                            <!-- NUEVO: Checkboxes de Actividades -->
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Actividades Realizadas</label>
+                                <div id="record-activities-checkboxes" class="checkbox-container p-4 bg-gray-50 rounded-lg border border-gray-200">
+                                    <!-- Checkboxes se cargarán dinámicamente -->
+                                    <p class="text-gray-500 text-sm italic col-span-full">No hay actividades en Configuración.</p>
+                                </div>
+                            </div>
+
+                            <div>
+                                <!-- MODIFICADO: Ahora solo Observaciones -->
+                                <label for="recordObservations" class="block text-sm font-medium text-gray-700 mb-1">Observaciones</label>
+                                <textarea id="recordObservations" rows="3" class="form-input" placeholder="Notas libres, imprevistos, etc."></textarea>
+                            </div>
+                            <div class="text-right">
+                                <button type="submit" class="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg shadow-lg transition duration-300">
+                                    Guardar Registro
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Columna 2: Registros Recientes -->
+                    <div class="space-y-8">
+                        <div class="bg-white p-6 rounded-xl shadow-lg">
+                            <h3 class="text-xl font-bold text-gray-800 mb-4">Registros Recientes</h3>
+                            <div id="recent-records-list" class="space-y-4 h-[400px] overflow-y-auto">
+                                <!-- Registros se cargarán aquí -->
+                                <p id="no-records-message" class="text-gray-500">No hay registros diarios.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- SECCIÓN 3: CORRALES -->
+            <section id="lots-section" class="app-section hidden">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-2xl font-bold text-gray-800">Corrales</h2>
+                    <button id="add-lot-btn" class="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-5 rounded-lg shadow-lg flex items-center transition duration-300">
+                        <i data-feather="plus" class="w-5 h-5 mr-2"></i> Añadir Lote
+                    </button>
+                </div>
+                
+                <!-- Contenedor de Tarjetas de Lotes -->
+                <div id="lot-display-area" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <!-- Las tarjetas de los lotes se insertarán aquí -->
+                </div>
+                <div id="no-lots-message" class="text-center text-gray-500 py-16 bg-white rounded-xl shadow-lg hidden">
+                    <i data-feather="archive" class="w-12 h-12 mx-auto mb-4"></i>
+                    <p>No hay lotes registrados. ¡Añade el primero!</p>
+                </div>
+            </section>
+
+            <!-- SECCIÓN 4: VENTAS -->
+            <section id="sales-section" class="app-section hidden">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    
+                    <!-- Columna 1: Carga de Venta -->
+                    <div class="bg-white p-6 rounded-xl shadow-lg">
+                        <h2 class="text-2xl font-bold text-gray-800 mb-6">Registrar Venta de Huevos</h2>
+                        <form id="sales-form" class="space-y-6">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div>
+                                    <label for="saleDate" class="block text-sm font-medium text-gray-700 mb-1">Fecha</label>
+                                    <input type="date" id="saleDate" class="form-input" required>
+                                </div>
+                                <div>
+                                    <label for="saleEggs" class="block text-sm font-medium text-gray-700 mb-1">Cantidad de Huevos</label>
+                                    <input type="number" id="saleEggs" class="form-input" placeholder="0" required>
+                                </div>
+                            </div>
+                            <div>
+                                <label for="salePrice" class="block text-sm font-medium text-gray-700 mb-1">Precio Total (Venta)</label>
+                                <input type="number" step="0.01" id="salePrice" class="form-input" placeholder="0.00" required>
+                            </div>
+                            <div>
+                                <!-- CAMBIADO a Select -->
+                                <label for="saleClient" class="block text-sm font-medium text-gray-700 mb-1">Cliente</label>
+                                <select id="saleClient" class="form-select" required>
+                                    <option value="">-- Seleccionar --</option>
+                                    <!-- Opciones se cargarán dinámicamente -->
+                                </select>
+                            </div>
+                            <div class="text-right">
+                                <button type="submit" class="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg shadow-lg transition duration-300">
+                                    Guardar Venta
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                    
+                    <!-- Columna 2: Registros Recientes -->
+                    <div class="bg-white p-6 rounded-xl shadow-lg">
+                        <h2 class="text-2xl font-bold text-gray-800 mb-6">Ventas Recientes</h2>
+                        <div id="recent-sales-list" class="space-y-4 h-[400px] overflow-y-auto">
+                            <!-- Ventas se cargarán aquí -->
+                            <p id="no-sales-message" class="text-gray-500">No hay ventas registradas.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- SECCIÓN 5: INSUMOS -->
+            <section id="purchases-section" class="app-section hidden">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    
+                    <!-- Columna 1: Carga de Compra -->
+                    <div class="bg-white p-6 rounded-xl shadow-lg">
+                        <h2 class="text-2xl font-bold text-gray-800 mb-6">Registrar Compra de Insumos</h2>
+                        <form id="stock-purchase-form" class="space-y-6">
+                            <div>
+                                <label for="stockPurchaseDate" class="block text-sm font-medium text-gray-700 mb-1">Fecha</LabeL>
+                                <input type="date" id="stockPurchaseDate" class="form-input" required>
+                            </div>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label for="stockPurchasedKg" class="block text-sm font-medium text-gray-700 mb-1">Cantidad (kg)</label>
+                                    <input type="number" step="0.1" id="stockPurchasedKg" class="form-input" placeholder="0.0 kg" required>
+                                </div>
+                                <div>
+                                    <label for="stockPurchasePrice" class="block text-sm font-medium text-gray-700 mb-1">Precio Total ($)</label>
+                                    <input type="number" step="0.01" id="stockPurchasePrice" class="form-input" placeholder="0.00" required>
+                                </div>
+                            </div>
+                            <div>
+                                <label for="stockPurchaseType" class="block text-sm font-medium text-gray-700 mb-1">Tipo de Alimento</label>
+                                <input type="text" id="stockPurchaseType" class="form-input" placeholder="Ej: Postura, Iniciador" required>
+                            </div>
+                            <div class="text-right">
+                                <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-5 rounded-lg shadow-lg transition duration-300">
+                                    Añadir Insumo
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Columna 2: Compras Recientes -->
+                    <div class="space-y-8">
+                        <div class="bg-white p-6 rounded-xl shadow-lg">
+                            <h3 class="text-xl font-bold text-gray-800 mb-4">Compras Recientes</h3>
+                            <div id="recent-purchases-list" class="space-y-4 h-[400px] overflow-y-auto">
+                                <!-- Compras se cargarán aquí -->
+                                <p id="no-purchases-message" class="text-gray-500">No hay compras registradas.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- SECCIÓN 6: REPORTES -->
+            <section id="reports-section" class="app-section hidden">
+                <div class="bg-white p-6 rounded-xl shadow-lg">
+                    <h2 class="text-2xl font-bold text-gray-800 mb-6">Generador de Reportes (CSV)</h2>
+                    <p class="text-gray-600 mb-6">Selecciona el periodo para generar un reporte unificado (formato CSV, compatible con Excel).</p>
+                    
+                    <div class="flex items-end space-x-4 mb-8">
+                        <div>
+                            <label for="reportPeriod" class="block text-sm font-medium text-gray-700 mb-1">Periodo</label>
+                            <select id="reportPeriod" class="form-select">
+                                <option value="monthly">Mensual</option>
+                                <option value="annual">Anual</option>
+                            </select>
+                        </div>
+                        <div id="reportMonthContainer"> <!-- Contenedor para el mes -->
+                            <label for="reportMonth" class="block text-sm font-medium text-gray-700 mb-1">Mes</label>
+                            <select id="reportMonth" class="form-select">
+                                <option value="01">Enero</option>
+                                <option value="02">Febrero</option>
+                                <option value="03">Marzo</option>
+                                <option value="04">Abril</option>
+                                <option value="05">Mayo</option>
+                                <option value="06">Junio</option>
+                                <option value="07">Julio</option>
+                                <option value="08">Agosto</option>
+                                <option value="09">Septiembre</option>
+                                <option value="10">Octubre</option>
+                                <option value="11">Noviembre</option>
+                                <option value="12">Diciembre</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="reportYear" class="block text-sm font-medium text-gray-700 mb-1">Año</label>
+                            <input type="number" id="reportYear" class="form-input" value="2025" placeholder="YYYY">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <button id="btn-export-unified" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-5 rounded-lg shadow-lg flex items-center justify-center transition duration-300 md:col-span-1">
+                            <i data-feather="file-text" class="w-5 h-5 mr-2"></i> Descargar Reporte Unificado
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECCIÓN 7: CONFIGURACIÓN (NUEVA) -->
+            <section id="settings-section" class="app-section hidden">
+                <h2 class="text-2xl font-bold text-gray-800 mb-6">Configuración</h2>
+
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    
+                    <!-- Columna 1: Gestionar Docentes -->
+                    <div class="bg-white p-6 rounded-xl shadow-lg">
+                        <h3 class="text-xl font-bold text-gray-800 mb-4">Gestionar Docentes</h3>
+                        <form id="teacher-form" class="flex space-x-2 mb-4">
+                            <input type="text" id="newTeacherName" class="form-input" placeholder="Nombre del docente" required>
+                            <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-bold p-3 rounded-lg shadow-lg">
+                                <i data-feather="plus" class="w-5 h-5"></i>
+                            </button>
+                        </form>
+                        <div id="teacher-list" class="space-y-2 h-48 overflow-y-auto">
+                            <!-- Lista de docentes -->
+                        </div>
+                    </div>
+                    
+                    <!-- Columna 2: Gestionar Clientes -->
+                    <div class="bg-white p-6 rounded-xl shadow-lg">
+                        <h3 class="text-xl font-bold text-gray-800 mb-4">Gestionar Clientes</h3>
+                        <form id="client-form" class="flex space-x-2 mb-4">
+                            <input type="text" id="newClientName" class="form-input" placeholder="Nombre del cliente" required>
+                            <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-bold p-3 rounded-lg shadow-lg">
+                                <i data-feather="plus" class="w-5 h-5"></i>
+                            </button>
+                        </form>
+                        <div id="client-list" class="space-y-2 h-48 overflow-y-auto">
+                            <!-- Lista de clientes -->
+                        </div>
+                    </div>
+                    
+                    <!-- NUEVA Columna 3: Gestionar Actividades -->
+                    <div class="bg-white p-6 rounded-xl shadow-lg">
+                        <h3 class="text-xl font-bold text-gray-800 mb-4">Gestionar Actividades</h3>
+                        <form id="activity-form" class="flex space-x-2 mb-4">
+                            <input type="text" id="newActivityName" class="form-input" placeholder="Nombre de actividad" required>
+                            <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-bold p-3 rounded-lg shadow-lg">
+                                <i data-feather="plus" class="w-5 h-5"></i>
+                            </button>
+                        </form>
+                        <div id="activity-list" class="space-y-2 h-48 overflow-y-auto">
+                            <!-- Lista de actividades -->
+                        </div>
+                    </div>
+
+                </div>
+                
+                <!-- Zona de Peligro -->
+                <div class="mt-12 bg-white p-6 rounded-xl shadow-lg border-2 border-red-300">
+                    <h3 class="text-xl font-bold text-red-600 mb-4">Zona de Peligro</h3>
+                    <p class="text-gray-600 mb-4">Esto borrará permanentemente todos los lotes, registros, ventas, compras y configuraciones de la aplicación. Úsalo solo para borrar datos de prueba.</p>
+                    <button id="btn-reset-all-data" class="bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-5 rounded-lg shadow-lg flex items-center transition duration-300">
+                        <i data-feather="alert-triangle" class="w-5 h-5 mr-2"></i> Borrar Todos los Datos
+                    </button>
+                </div>
+            </section>
+
+        </main>
+
+        <!-- Modal para Añadir/Editar Lote -->
+        <div id="lot-modal" class="modal">
+            <div class="modal-content overflow-hidden">
+                <!-- Encabezado del Modal -->
+                <div class="bg-gray-50 px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+                    <h3 id="modal-title" class="text-xl font-bold text-gray-800">Añadir Nuevo Lote</h3>
+                    <button id="close-modal-btn" class="text-gray-400 hover:text-gray-600">
+                        <i data-feather="x" class="w-6 h-6"></i>
+                    </button>
+                </div>
+                <!-- Cuerpo del Modal (Formulario) -->
+                <form id="lot-form" class="p-6 md:p-8 space-y-6">
+                    <input type="hidden" id="lotId" />
+                    <div>
+                        <label for="lotName" class="block text-sm font-medium text-gray-700 mb-1">Nombre del Lote / Corral</label>
+                        <input type="text" id="lotName" class="form-input" placeholder="Ej: Corral A-01" required>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label for="henCount" class="block text-sm font-medium text-gray-700 mb-1">N° de Gallinas</label>
+                            <input type="number" id="henCount" class="form-input" placeholder="0" required>
+                        </div>
+                        <div>
+                            <label for="roosterCount" class="block text-sm font-medium text-gray-700 mb-1">N° de Gallos</label>
+                            <input type="number" id="roosterCount" class="form-input" placeholder="0" required>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label for="dateRecorded" class="block text-sm font-medium text-gray-700 mb-1">Fecha de Ingreso / Registro</label>
+                            <input type="date" id="dateRecorded" class="form-input" required>
+                        </div>
+                        <div>
+                            <label for="dailyRationPerHen" class="block text-sm font-medium text-gray-700 mb-1">Ración por Animal (kg)</label>
+                            <input type="number" step="0.001" id="dailyRationPerHen" class="form-input" placeholder="Ej: 0.115" required>
+                        </div>
+                    </div>
+                    <div>
+                        <label for="lotNotes" class="block text-sm font-medium text-gray-700 mb-1">Notas (Raza, Edad, etc.)</label>
+                        <textarea id="lotNotes" rows="3" class="form-input" placeholder="Información adicional del lote..."></textarea>
+                    </div>
+                    <!-- Pie del Modal -->
+                    <div class="pt-4 flex justify-end space-x-3">
+                        <button type="button" id="cancel-modal-btn" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-3 px-5 rounded-lg transition duration-300">
+                            Cancelar
+                        </button>
+                        <button type="submit" class="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-5 rounded-lg shadow-lg transition duration-300">
+                            Guardar Lote
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Modal de Confirmación de Borrado (Genérico) -->
+        <div id="confirm-delete-modal" class="confirm-modal">
+            <div class="confirm-modal-content">
+                <h3 id="confirm-title" class="text-xl font-bold text-gray-900 mb-4">Confirmar Eliminación</h3>
+                <p id="confirm-message" class="text-gray-600 mb-8">¿Estás seguro? Esta acción no se puede deshacer.</p>
+                <div class="flex justify-end space-x-3">
+                    <button id="cancel-delete-btn" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-3 px-5 rounded-lg transition duration-300">
+                        Cancelar
+                    </button>
+                    <button id="confirm-delete-btn" class="bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-5 rounded-lg shadow-lg transition duration-300">
+                        Eliminar
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Modal de Confirmación de RESET TOTAL -->
+        <div id="confirm-reset-modal" class="confirm-modal">
+            <div class="confirm-modal-content">
+                <h3 class="text-xl font-bold text-red-700 mb-4">¡ACCIÓN IRREVERSIBLE!</h3>
+                <p class="text-gray-600 mb-4">¿Estás absolutamente seguro de que deseas borrar TODOS los datos de la aplicación?</p>
+                <p class="text-gray-600 mb-8">Todos los lotes, registros, ventas e insumos se perderán.</p>
+                <div class="flex justify-end space-x-3">
+                    <button id="cancel-reset-btn" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-3 px-5 rounded-lg transition duration-300">
+                        Cancelar
+                    </button>
+                    <button id="confirm-reset-btn" class="bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-5 rounded-lg shadow-lg transition duration-300">
+                        SÍ, BORRAR TODO
+                    </button>
+                </div>
+            </div>
+        </div>
+
+
+        <!-- Notificación Toast -->
+        <div id="toast-notification" class="toast">
+            <span id="toast-message"></span>
+        </div>
+
+        <!-- Pie de Página -->
+        <footer class="bg-white border-t border-gray-200 mt-12">
+            <div class="container mx-auto px-6 py-4 text-center text-gray-500 text-sm">
+                <p>&copy; 2025 App de Gestión Avícola. Datos guardados localmente.</p>
+            </div>
+        </footer>
+
+    </div> <!-- Fin Contenedor Principal -->
+
+
+    <!-- Scripts de la Aplicación (LocalStorage) -->
+    <script type="module">
+        
+        // --- 0. CONSTANTES Y ESTADO GLOBAL ---
+        
+        // Claves para LocalStorage
+        const LS_LOTS_KEY = 'farm_hen_lots';
+        const LS_RECORDS_KEY = 'farm_daily_records';
+        const LS_STOCK_KEY = 'farm_feed_stock';
+        const LS_SALES_KEY = 'farm_egg_sales';
+        const LS_PURCHASES_KEY = 'farm_feed_purchases';
+        // Claves de Configuración
+        const LS_TEACHERS_KEY = 'farm_settings_teachers';
+        const LS_CLIENTS_KEY = 'farm_settings_clients';
+        const LS_ACTIVITIES_KEY = 'farm_settings_activities'; // NUEVA
+        
+        const ALL_LS_KEYS = [LS_LOTS_KEY, LS_RECORDS_KEY, LS_STOCK_KEY, LS_SALES_KEY, LS_PURCHASES_KEY, LS_TEACHERS_KEY, LS_CLIENTS_KEY, LS_ACTIVITIES_KEY]; // ACTUALIZADA
+
+
+        let localLotsCache = []; // Caché local para editar lotes
+        let globalTotalHens = 0;
+        let globalCurrentStockKg = 0;
+        let globalEggsToday = 0;
+        let globalTotalDailyRation = 0;
+        let globalSalesToday = 0;
+        let globalMonthlyBalance = 0;
+        let globalEggStock = 0;
+        
+        // Estado para borrado genérico
+        let itemToDelete = { id: null, type: null, element: null };
+        
+        // Instancias de Gráficos (para destruirlas antes de redibujar)
+        let productionLineChart = null;
+        let salesPieChart = null;
+
+
+        // --- 1. SELECTORES DEL DOM ---
+        
+        // Navegación
+        const navButtons = document.querySelectorAll('.nav-tab');
+        const sections = document.querySelectorAll('.app-section');
+
+        // Modal Lotes
+        const modal = document.getElementById('lot-modal');
+        const modalTitle = document.getElementById('modal-title');
+        const addLotBtn = document.getElementById('add-lot-btn');
+        const closeModalBtn = document.getElementById('close-modal-btn');
+        const cancelModalBtn = document.getElementById('cancel-modal-btn');
+        const lotForm = document.getElementById('lot-form');
+        const lotDisplayArea = document.getElementById('lot-display-area');
+        const noLotsMessage = document.getElementById('no-lots-message');
+
+        // Modal Confirmación Borrado (Genérico)
+        const confirmDeleteModal = document.getElementById('confirm-delete-modal');
+        const confirmTitle = document.getElementById('confirm-title');
+        const confirmMessage = document.getElementById('confirm-message');
+        const cancelDeleteBtn = document.getElementById('cancel-delete-btn');
+        const confirmDeleteBtn = document.getElementById('confirm-delete-btn');
+        
+        // Modal Confirmación RESET TOTAL
+        const confirmResetModal = document.getElementById('confirm-reset-modal');
+        const cancelResetBtn = document.getElementById('cancel-reset-btn');
+        const confirmResetBtn = document.getElementById('confirm-reset-btn');
+        const btnResetAllData = document.getElementById('btn-reset-all-data');
+
+
+        // Sección Registros
+        const dailyRecordForm = document.getElementById('daily-record-form');
+        const recentRecordsList = document.getElementById('recent-records-list');
+        const noRecordsMessage = document.getElementById('no-records-message');
+        const recordResponsibleSelect = document.getElementById('recordResponsible'); // Select
+        const recordActivitiesCheckboxes = document.getElementById('record-activities-checkboxes'); // NUEVO
+        const recordObservationsTextarea = document.getElementById('recordObservations'); // NUEVO (renombrado)
+
+        // Sección Compras
+        const stockPurchaseForm = document.getElementById('stock-purchase-form');
+        const recentPurchasesList = document.getElementById('recent-purchases-list');
+        const noPurchasesMessage = document.getElementById('no-purchases-message');
+
+        // Sección Ventas
+        const salesForm = document.getElementById('sales-form');
+        const recentSalesList = document.getElementById('recent-sales-list');
+        const noSalesMessage = document.getElementById('no-sales-message');
+        const statSalesToday = document.getElementById('stat-sales-today');
+        const saleClientSelect = document.getElementById('saleClient'); // Select
+
+        // Sección Dashboard (Stats)
+        const statTotalHens = document.getElementById('stat-total-hens');
+        const statFeedStock = document.getElementById('stat-feed-stock');
+        const statEggsToday = document.getElementById('stat-eggs-today');
+        const statDaysRemaining = document.getElementById('stat-days-remaining');
+        const statBalanceMonth = document.getElementById('stat-balance-month');
+        const statEggStock = document.getElementById('stat-egg-stock');
+        
+        // Gráficos
+        const productionChartCtx = document.getElementById('productionChart').getContext('2d');
+        const salesChartCtx = document.getElementById('salesChart').getContext('2d');
+
+        // Reportes
+        const reportPeriodSelect = document.getElementById('reportPeriod');
+        const reportMonthContainer = document.getElementById('reportMonthContainer');
+        const reportMonthSelect = document.getElementById('reportMonth');
+        const reportYearInput = document.getElementById('reportYear');
+        const btnExportUnified = document.getElementById('btn-export-unified');
+        
+        // NUEVA Sección Configuración
+        const teacherForm = document.getElementById('teacher-form');
+        const newTeacherNameInput = document.getElementById('newTeacherName');
+        const teacherList = document.getElementById('teacher-list');
+        const clientForm = document.getElementById('client-form');
+        const newClientNameInput = document.getElementById('newClientName');
+        const clientList = document.getElementById('client-list');
+        // NUEVOS Selectores de Configuración
+        const activityForm = document.getElementById('activity-form');
+        const newActivityNameInput = document.getElementById('newActivityName');
+        const activityList = document.getElementById('activity-list');
+
+
+        // Notificación Toast
+        const toast = document.getElementById('toast-notification');
+        const toastMessage = document.getElementById('toast-message');
+
+
+        // --- 2. MANEJO DE NAVEGACIÓN (PESTAÑAS) ---
+        
+        const showSection = (sectionId) => {
+            sections.forEach(section => section.classList.add('hidden'));
+            navButtons.forEach(btn => btn.classList.remove('active'));
+            document.getElementById(sectionId).classList.remove('hidden');
+            document.querySelector(`.nav-tab[data-section="${sectionId}"]`).classList.add('active');
+        };
+
+
+        // --- 3. MANEJO MODAL (LOTES) ---
+
+        const openModal = (lotId = null) => {
+            lotForm.reset();
+            if (lotId) {
+                // Modo Editar
+                modalTitle.textContent = 'Editar Lote';
+                const lot = localLotsCache.find(l => l.id === lotId);
+                if (lot) {
+                    document.getElementById('lotId').value = lotId;
+                    document.getElementById('lotName').value = lot.name;
+                    document.getElementById('henCount').value = lot.henCount;
+                    document.getElementById('roosterCount').value = lot.roosterCount;
+                    document.getElementById('dateRecorded').value = lot.dateRecorded; // Ya está en YYYY-MM-DD
+                    document.getElementById('dailyRationPerHen').value = lot.dailyRationPerHen;
+                    document.getElementById('lotNotes').value = lot.notes;
+                }
+            } else {
+                // Modo Añadir
+                modalTitle.textContent = 'Añadir Nuevo Lote';
+                document.getElementById('dateRecorded').value = new Date().toISOString().split('T')[0];
+            }
+            modal.classList.add('modal-open');
+        };
+
+        const closeModal = () => {
+            modal.classList.remove('modal-open');
+        };
+
+        
+        // --- 4. MANEJO MODAL CONFIRMACIÓN BORRADO (GENÉRICO Y RESET) ---
+
+        const openConfirmDeleteModal = (id, type, message) => {
+            itemToDelete = { id, type };
+            confirmTitle.textContent = 'Confirmar Eliminación';
+            confirmMessage.textContent = message || '¿Estás seguro? Esta acción no se puede deshacer.';
+            confirmDeleteModal.classList.add('confirm-modal-open');
+        };
+        
+        const closeConfirmDeleteModal = () => {
+            itemToDelete = { id: null, type: null };
+            confirmDeleteModal.classList.remove('confirm-modal-open');
+        };
+        
+        // Botón rojo genérico
+        const handleConfirmDelete = () => {
+            const { id, type } = itemToDelete;
+            if (!id || !type) return;
+
+            try {
+                switch(type) {
+                    case 'lot':
+                        deleteLot(id);
+                        break;
+                    case 'record':
+                        deleteDailyRecord(id);
+                        break;
+                    case 'sale':
+                        deleteSale(id);
+                        break;
+                    case 'purchase':
+                        deletePurchase(id);
+                        break;
+                    case 'teacher':
+                        deleteSettingItem(id, LS_TEACHERS_KEY, loadSettings);
+                        break;
+                    case 'client':
+                        deleteSettingItem(id, LS_CLIENTS_KEY, loadSettings);
+                        break;
+                    // NUEVO Caso
+                    case 'activity':
+                        deleteSettingItem(id, LS_ACTIVITIES_KEY, loadSettings);
+                        break;
+                }
+            } catch (error) {
+                console.error("Error al borrar:", error);
+                showToast("Error al borrar el ítem.", true);
+            }
+            
+            closeConfirmDeleteModal();
+        };
+
+        // Modal de Reset Total
+        const openConfirmResetModal = () => {
+            confirmResetModal.classList.add('confirm-modal-open');
+        };
+        const closeConfirmResetModal = () => {
+            confirmResetModal.classList.remove('confirm-modal-open');
+        };
+        const handleConfirmReset = () => {
+            try {
+                ALL_LS_KEYS.forEach(key => localStorage.removeItem(key));
+                showToast("Todos los datos han sido borrados. Recargando...");
+                setTimeout(() => location.reload(), 1500);
+            } catch (error) {
+                showToast("Error al borrar los datos.", true);
+            }
+            closeConfirmResetModal();
+        };
+        
+        
+        // Delegación de eventos para botones en tarjetas (Lotes)
+        const handleLotAreaClick = (e) => {
+            const button = e.target.closest('button');
+            if (!button) return;
+            
+            const lotId = button.dataset.id;
+            
+            if (button.dataset.action === 'edit') {
+                openModal(lotId);
+            } else if (button.dataset.action === 'delete') {
+                openConfirmDeleteModal(lotId, 'lot', '¿Estás seguro de que deseas eliminar este lote?');
+            }
+        };
+
+
+        // --- 5. ACTUALIZACIÓN DEL DASHBOARD ---
+
+        const updateDashboard = () => {
+            // Actualizar tarjetas
+            statTotalHens.textContent = globalTotalHens;
+            statFeedStock.textContent = globalCurrentStockKg.toFixed(1);
+            statEggsToday.textContent = globalEggsToday;
+            statSalesToday.textContent = globalSalesToday.toFixed(2);
+            statEggStock.textContent = globalEggStock;
+            
+            // Formatear el balance MENSUAL
+            const balanceColorClass = globalMonthlyBalance >= 0 ? 'text-green-600' : 'text-red-600';
+            statBalanceMonth.textContent = globalMonthlyBalance.toFixed(2);
+            statBalanceMonth.className = `text-3xl font-bold ${balanceColorClass}`;
+
+            // Calcular días restantes
+            const totalDailyRation = globalTotalDailyRation;
+            
+            if (totalDailyRation > 0 && globalCurrentStockKg > 0) {
+                const daysRemaining = globalCurrentStockKg / totalDailyRation;
+                statDaysRemaining.textContent = daysRemaining.toFixed(1);
+            } else {
+                statDaysRemaining.textContent = '0';
+            }
+        };
+        
+        // --- 5b. FUNCIÓN DE NOTIFICACIÓN TOAST ---
+        const showToast = (message, isError = false) => {
+            toastMessage.textContent = message;
+            if (isError) {
+                toast.classList.add('error');
+            } else {
+                toast.classList.remove('error');
+            }
+            toast.classList.add('show');
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        };
+
+        
+        // --- 6. FUNCIONES DE CARGA DE DATOS (LocalStorage) ---
+
+        /**
+         * Carga Lotes (sección Lotes) y calcula gallinas/ración (Dashboard)
+         */
+        const loadLots = () => {
+            const lots = JSON.parse(localStorage.getItem(LS_LOTS_KEY) || '[]');
+            localLotsCache = lots; // Actualizar caché
+            
+            lotDisplayArea.innerHTML = '';
+            let totalHens = 0;
+            let totalRation = 0;
+
+            if (lots.length === 0) {
+                noLotsMessage.classList.remove('hidden');
+            } else {
+                noLotsMessage.classList.add('hidden');
+                lots.forEach((lot) => {
+                    renderLotCard(lot, lot.id);
+                    const totalAnimalsInLot = (lot.henCount || 0) + (lot.roosterCount || 0);
+                    totalHens += totalAnimalsInLot;
+                    totalRation += totalAnimalsInLot * (lot.dailyRationPerHen || 0);
+                });
+            }
+            
+            globalTotalHens = totalHens;
+            globalTotalDailyRation = totalRation;
+            updateDashboard();
+        };
+
+        /**
+         * Carga Registros Diarios (sección Registros) y huevos de hoy (Dashboard)
+         */
+        const loadDailyRecords = () => {
+            const allRecords = JSON.parse(localStorage.getItem(LS_RECORDS_KEY) || '[]');
+            const todayStr = new Date().toISOString().split('T')[0];
+            
+            let eggsSumToday = 0;
+            let totalHarvested = 0;
+
+            const todayRecords = allRecords.filter(r => r.date === todayStr);
+            todayRecords.forEach(r => eggsSumToday += (r.eggsHarvested || 0));
+            globalEggsToday = eggsSumToday;
+
+            allRecords.forEach(r => totalHarvested += (r.eggsHarvested || 0));
+            globalEggStock = totalHarvested;
+            
+            renderRecordList(allRecords);
+            renderProductionChart(allRecords);
+            updateDashboard();
+        };
+        
+        /**
+         * Carga Compras (sección Compras) y balance (Dashboard)
+         */
+        const loadPurchases = () => {
+            const allPurchases = JSON.parse(localStorage.getItem(LS_PURCHASES_KEY) || '[]');
+            const currentMonth = new Date().toISOString().substring(0, 7);
+            
+            let totalExpensesMonth = 0;
+            allPurchases.forEach(p => {
+                if(p.date.startsWith(currentMonth)) {
+                    totalExpensesMonth += (p.price || 0);
+                }
+            });
+            
+            globalMonthlyBalance = -totalExpensesMonth; 
+            renderPurchaseList(allPurchases);
+            updateDashboard();
+        };
+
+        /**
+         * Carga el Stock de Alimento (Dashboard)
+         */
+        const loadStock = () => {
+            const stock = parseFloat(localStorage.getItem(LS_STOCK_KEY) || '0');
+            globalCurrentStockKg = stock;
+            updateDashboard();
+        };
+
+        /**
+         * Carga Ventas (sección Ventas), ventas de hoy y balance (Dashboard)
+         */
+        const loadSales = () => {
+            const allSales = JSON.parse(localStorage.getItem(LS_SALES_KEY) || '[]');
+            const todayStr = new Date().toISOString().split('T')[0];
+            const currentMonth = new Date().toISOString().substring(0, 7);
+
+            let salesSumToday = 0;
+            let totalIncomeMonth = 0;
+            let totalSoldEggs = 0;
+
+            const todaySales = allSales.filter(s => s.date === todayStr);
+            todaySales.forEach(s => salesSumToday += (s.price || 0));
+            globalSalesToday = salesSumToday;
+            
+            allSales.forEach(s => {
+                if(s.date.startsWith(currentMonth)) {
+                    totalIncomeMonth += (s.price || 0);
+                }
+                totalSoldEggs += (s.eggs || 0);
+            });
+            
+            globalMonthlyBalance = totalIncomeMonth + globalMonthlyBalance;
+            globalEggStock = globalEggStock - totalSoldEggs; 
+
+            renderSaleList(allSales);
+            renderSalesChart(allSales);
+            updateDashboard();
+        };
+        
+        /**
+         * NUEVO: Carga la configuración de Docentes y Clientes
+         */
+        const loadSettings = () => {
+            const teachers = JSON.parse(localStorage.getItem(LS_TEACHERS_KEY) || '[]');
+            const clients = JSON.parse(localStorage.getItem(LS_CLIENTS_KEY) || '[]');
+            const activities = JSON.parse(localStorage.getItem(LS_ACTIVITIES_KEY) || '[]'); // NUEVO
+            
+            renderSettingsList(teacherList, teachers, 'teacher');
+            renderSettingsList(clientList, clients, 'client');
+            renderSettingsList(activityList, activities, 'activity'); // NUEVO
+            
+            populateDropdowns(recordResponsibleSelect, teachers, 'Docente');
+            populateDropdowns(saleClientSelect, clients, 'Cliente');
+            populateActivitiesCheckboxes(activities); // NUEVO
+        };
+
+        const populateDropdowns = (selectElement, items, placeholder) => {
+            selectElement.innerHTML = `<option value="">-- Seleccionar ${placeholder} --</option>`;
+            items.forEach(item => {
+                const option = document.createElement('option');
+                option.value = item.name;
+                option.textContent = item.name;
+                selectElement.appendChild(option);
+            });
+        };
+        
+        /**
+         * NUEVO: Carga los checkboxes de actividades en el formulario de Registros
+         */
+        const populateActivitiesCheckboxes = (activities) => {
+            recordActivitiesCheckboxes.innerHTML = '';
+            if (activities.length === 0) {
+                recordActivitiesCheckboxes.innerHTML = `<p class="text-gray-500 text-sm italic col-span-full">No hay actividades en Configuración.</p>`;
+            } else {
+                activities.forEach(activity => {
+                    const label = document.createElement('label');
+                    label.className = 'checkbox-label';
+                    label.innerHTML = `
+                        <input type="checkbox" value="${activity.name}" class="checkbox-input">
+                        <span>${activity.name}</span>
+                    `;
+                    recordActivitiesCheckboxes.appendChild(label);
+                });
+            }
+        };
+
+        /**
+         * Carga TODOS los datos. Se llama al inicio.
+         */
+        const loadAllData = () => {
+            loadLots();
+            loadPurchases(); // Cargar Gastos PRIMERO
+            loadDailyRecords(); // Cargar Cosecha SEGUNDO
+            loadSales(); // Cargar Ventas TERCERO
+            loadStock();
+            loadSettings(); // Cargar desplegables
+        };
+
+
+        // --- 7. FUNCIONES DE RENDERIZADO DE LISTAS ---
+
+        const renderLotCard = (lot, id) => {
+            const card = document.createElement('div');
+            card.className = 'bg-white rounded-xl shadow-lg overflow-hidden flex flex-col';
+            card.innerHTML = `
+                <div class="p-6">
+                    <h3 class="text-xl font-bold text-gray-900 mb-3">${lot.name}</h3>
+                    <div class="grid grid-cols-2 gap-4 text-sm mb-4">
+                        <div>
+                            <p class="text-gray-500">Gallinas</p>
+                            <p class="font-semibold text-lg">${lot.henCount}</p>
+                        </div>
+                        <div>
+                            <p class="text-gray-500">Gallos</p>
+                            <p class="font-semibold text-lg">${lot.roosterCount}</p>
+                        </div>
+                        <div>
+                            <p class="text-gray-500">Fecha Ingreso</p>
+                            <p class="font-semibold">${lot.dateRecorded}</p>
+                        </div>
+                        <div>
+                            <p class="text-gray-500">Ración/Animal</p>
+                            <p class="font-semibold">${lot.dailyRationPerHen} kg</p>
+                        </div>
+                    </div>
+                    <p class="text-sm text-gray-600 italic">${lot.notes || 'Sin notas.'}</p>
+                </div>
+                <div class="bg-gray-50 px-6 py-3 mt-auto flex justify-end space-x-3">
+                    <button data-id="${id}" data-action="edit" class="text-sm font-medium text-blue-600 hover:text-blue-800">Editar</button>
+                    <button data-id="${id}" data-action="delete" class="text-sm font-medium text-red-600 hover:text-red-800">Eliminar</button>
+                </div>
+            `;
+            lotDisplayArea.appendChild(card);
+        };
+        
+        const renderRecordList = (allRecords) => {
+            recentRecordsList.innerHTML = '';
+            if (allRecords.length === 0) {
+                noRecordsMessage.classList.remove('hidden');
+            } else {
+                noRecordsMessage.classList.add('hidden');
+                [...allRecords].reverse().forEach((record) => {
+                    const el = document.createElement('div');
+                    el.className = 'p-3 bg-gray-50 rounded-lg border border-gray-200 flex justify-between items-start';
+                    
+                    // MODIFICADO: Mostrar activities (array) y observations (string)
+                    const activitiesString = (record.activities && record.activities.length > 0) 
+                        ? `<p class="text-sm text-gray-700 font-medium">Actividades: ${record.activities.join(', ')}</p>` 
+                        : '';
+                    const observationsString = record.observations 
+                        ? `<p class="text-sm text-gray-500 italic mt-1">${record.observations}</p>` 
+                        : '';
+
+                    el.innerHTML = `
+                        <div class="pr-2">
+                            <p class="font-medium text-gray-800">${record.date}: ${record.eggsHarvested} huevos, ${record.feedSupplied} kg</p>
+                            <p class="text-sm text-gray-600">Resp: ${record.responsible}</p>
+                            ${activitiesString}
+                            ${observationsString}
+                        </div>
+                        <button data-id="${record.id}" data-type="record" data-action="delete" class="delete-btn p-2 flex-shrink-0">
+                            <i data-feather="trash-2" class="w-4 h-4 pointer-events-none"></i>
+                        </button>
+                    `;
+                    recentRecordsList.appendChild(el);
+                });
+            }
+            feather.replace(); // Recargar iconos
+        };
+        
+        const renderPurchaseList = (allPurchases) => {
+            recentPurchasesList.innerHTML = '';
+            if (allPurchases.length === 0) {
+                noPurchasesMessage.classList.remove('hidden');
+            } else {
+                noPurchasesMessage.classList.add('hidden');
+                [...allPurchases].reverse().forEach((purchase) => {
+                    const el = document.createElement('div');
+                    el.className = 'p-3 bg-gray-50 rounded-lg border border-gray-200 flex justify-between items-center';
+                    el.innerHTML = `
+                        <div>
+                            <p class="font-medium text-gray-800">${purchase.date}: ${purchase.kg} kg por $${purchase.price.toFixed(2)}</p>
+                            <p class="text-sm text-gray-600">Tipo: ${purchase.type || 'No especificado'}</p>
+                        </div>
+                        <button data-id="${purchase.id}" data-type="purchase" data-action="delete" class="delete-btn p-2">
+                            <i data-feather="trash-2" class="w-4 h-4 pointer-events-none"></i>
+                        </button>
+                    `;
+                    recentPurchasesList.appendChild(el);
+                });
+            }
+            feather.replace();
+        };
+        
+        const renderSaleList = (allSales) => {
+            recentSalesList.innerHTML = '';
+            if (allSales.length === 0) {
+                noSalesMessage.classList.remove('hidden');
+            } else {
+                noSalesMessage.classList.add('hidden');
+                // Mostrar en orden inverso
+                [...allSales].reverse().forEach((sale) => {
+                    const el = document.createElement('div');
+                    el.className = 'p-3 bg-gray-50 rounded-lg border border-gray-200 flex justify-between items-center';
+                    el.innerHTML = `
+                        <div>
+                            <p class="font-medium text-gray-800">${sale.date}: ${sale.eggs} huevos a $${sale.price.toFixed(2)}</p>
+                            <p class="text-sm text-gray-600">Cliente: ${sale.client}</p>
+                        </div>
+                        <button data-id="${sale.id}" data-type="sale" data-action="delete" class="delete-btn p-2">
+                            <i data-feather="trash-2" class="w-4 h-4 pointer-events-none"></i>
+                        </button>
+                    `;
+                    recentSalesList.appendChild(el);
+                });
+            }
+            feather.replace();
+        };
+        
+        // NUEVA: Renderiza listas en Configuración
+        const renderSettingsList = (listElement, items, type) => {
+            listElement.innerHTML = '';
+            if (items.length === 0) {
+                listElement.innerHTML = `<p class="text-gray-500 italic">No hay ${type}s guardados.</p>`;
+            } else {
+                items.forEach(item => {
+                    const el = document.createElement('div');
+                    el.className = 'settings-list-item';
+                    el.innerHTML = `
+                        <span class="font-medium text-gray-800">${item.name}</span>
+                        <button data-id="${item.id}" data-type="${type}" data-action="delete" class="delete-btn p-2">
+                            <i data-feather="x" class="w-4 h-4 pointer-events-none"></i>
+                        </button>
+                    `;
+                    listElement.appendChild(el);
+                });
+            }
+            feather.replace();
+        };
+        
+        // --- 7b. FUNCIONES DE RENDERIZADO DE GRÁFICOS ---
+
+        const renderProductionChart = (records) => {
+            if (productionLineChart) productionLineChart.destroy();
+            
+            const groupedData = records.reduce((acc, r) => {
+                const month = r.date.substring(0, 7);
+                acc[month] = (acc[month] || 0) + r.eggsHarvested;
+                return acc;
+            }, {});
+            
+            const sortedLabels = Object.keys(groupedData).sort();
+            const chartData = sortedLabels.map(label => groupedData[label]);
+
+            productionLineChart = new Chart(productionChartCtx, {
+                type: 'bar',
+                data: {
+                    labels: sortedLabels,
+                    datasets: [{
+                        label: 'Huevos Cosechados por Mes',
+                        data: chartData,
+                        borderColor: 'rgb(22, 163, 74)',
+                        backgroundColor: 'rgba(22, 163, 74, 0.8)',
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true } } }
+            });
+        };
+        
+        const renderSalesChart = (sales) => {
+            if (salesPieChart) salesPieChart.destroy();
+            
+            const groupedData = sales.reduce((acc, s) => {
+                const client = s.client || 'Anónimo';
+                acc[client] = (acc[client] || 0) + s.eggs;
+                return acc;
+            }, {});
+            
+            const sortedLabels = Object.keys(groupedData).sort();
+            const chartData = sortedLabels.map(label => groupedData[label]);
+
+            salesPieChart = new Chart(salesChartCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: sortedLabels,
+                    datasets: [{
+                        label: 'Total Huevos Comprados',
+                        data: chartData,
+                        backgroundColor: [
+                            'rgb(54, 162, 235)', 'rgb(255, 99, 132)', 'rgb(255, 205, 86)',
+                            'rgb(75, 192, 192)', 'rgb(153, 102, 255)', 'rgb(255, 159, 64)'
+                        ]
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+        };
+
+
+        // --- 8. MANEJADORES DE FORMULARIOS (Escritura en LS) ---
+
+        /**
+         * Maneja el envío del formulario de Lote (Añadir o Editar).
+         */
+        const handleLotFormSubmit = (e) => {
+            e.preventDefault();
+            
+            const lotId = document.getElementById('lotId').value;
+            const lotData = {
+                name: document.getElementById('lotName').value,
+                henCount: parseInt(document.getElementById('henCount').value, 10),
+                roosterCount: parseInt(document.getElementById('roosterCount').value, 10),
+                dateRecorded: document.getElementById('dateRecorded').value,
+                dailyRationPerHen: parseFloat(document.getElementById('dailyRationPerHen').value),
+                notes: document.getElementById('lotNotes').value,
+            };
+
+            let lots = JSON.parse(localStorage.getItem(LS_LOTS_KEY) || '[]');
+            
+            if (lotId) {
+                const index = lots.findIndex(l => l.id === lotId);
+                if (index > -1) {
+                    lots[index] = { ...lotData, id: lotId };
+                    showToast('Lote actualizado con éxito.');
+                }
+            } else {
+                lotData.id = crypto.randomUUID();
+                lots.push(lotData);
+                showToast('Lote añadido con éxito.');
+            }
+            
+            localStorage.setItem(LS_LOTS_KEY, JSON.stringify(lots));
+            closeModal();
+            loadAllData();
+        };
+
+        /**
+         * Función para borrar un lote
+         */
+        const deleteLot = (lotId) => {
+            let lots = JSON.parse(localStorage.getItem(LS_LOTS_KEY) || '[]');
+            lots = lots.filter(l => l.id !== lotId);
+            localStorage.setItem(LS_LOTS_KEY, JSON.stringify(lots));
+            showToast('Lote eliminado.', true);
+            loadAllData();
+        };
+
+        /**
+         * Maneja el envío del Registro Diario (Crea registro y RESTA stock).
+         */
+        const handleDailyRecordSubmit = (e) => {
+            e.preventDefault();
+            
+            // NUEVO: Obtener actividades seleccionadas
+            const selectedActivities = [];
+            document.querySelectorAll('#record-activities-checkboxes input[type="checkbox"]:checked')
+                .forEach(checkbox => {
+                    selectedActivities.push(checkbox.value);
+                });
+
+            const recordData = {
+                id: crypto.randomUUID(),
+                date: document.getElementById('recordDate').value,
+                eggsHarvested: parseInt(document.getElementById('eggsHarvested').value, 10),
+                feedSupplied: parseFloat(document.getElementById('feedSupplied').value),
+                responsible: recordResponsibleSelect.value, // Desde el select
+                activities: selectedActivities, // NUEVO (array)
+                observations: recordObservationsTextarea.value, // MODIFICADO (string)
+                createdAt: new Date().toISOString()
+            };
+            
+            if (isNaN(recordData.eggsHarvested) || isNaN(recordData.feedSupplied) || !recordData.date || !recordData.responsible) {
+                showToast('Error: Revisa los campos obligatorios.', true);
+                return;
+            }
+
+            const feedToSubtract = -Math.abs(recordData.feedSupplied);
+            const records = JSON.parse(localStorage.getItem(LS_RECORDS_KEY) || '[]');
+            records.push(recordData);
+            localStorage.setItem(LS_RECORDS_KEY, JSON.stringify(records));
+            
+            let stock = parseFloat(localStorage.getItem(LS_STOCK_KEY) || '0');
+            stock += feedToSubtract;
+            localStorage.setItem(LS_STOCK_KEY, stock.toString());
+            
+            dailyRecordForm.reset();
+            document.getElementById('recordDate').value = new Date().toISOString().split('T')[0];
+            loadDailyRecords();
+            loadStock();
+            showToast('Registro diario guardado.');
+        };
+        
+        /**
+         * NUEVO: Borra un registro diario (y DEVUELVE el alimento al stock)
+         */
+        const deleteDailyRecord = (recordId) => {
+            let records = JSON.parse(localStorage.getItem(LS_RECORDS_KEY) || '[]');
+            const recordToDelete = records.find(r => r.id === recordId);
+            
+            if (!recordToDelete) return;
+            
+            // Revertir el stock
+            const feedToReturn = recordToDelete.feedSupplied || 0;
+            let stock = parseFloat(localStorage.getItem(LS_STOCK_KEY) || '0');
+            stock += feedToReturn; // Devolver
+            localStorage.setItem(LS_STOCK_KEY, stock.toString());
+
+            // Filtrar y guardar
+            records = records.filter(r => r.id !== recordId);
+            localStorage.setItem(LS_RECORDS_KEY, JSON.stringify(records));
+            
+            showToast('Registro diario eliminado.', true);
+            loadAllData(); // Recalcular todo
+        };
+
+
+        /**
+         * Maneja el envío del formulario de Ventas (Crea registro).
+         */
+        const handleSalesFormSubmit = (e) => {
+            e.preventDefault();
+            
+            const saleData = {
+                id: crypto.randomUUID(),
+                date: document.getElementById('saleDate').value,
+                eggs: parseInt(document.getElementById('saleEggs').value, 10),
+                price: parseFloat(document.getElementById('salePrice').value),
+                client: saleClientSelect.value, // Desde el select
+                createdAt: new Date().toISOString()
+            };
+            
+            if (isNaN(saleData.eggs) || isNaN(saleData.price) || !saleData.date || !saleData.client) {
+                showToast('Error: Revisa los campos obligatorios.', true);
+                return;
+            }
+            
+            const sales = JSON.parse(localStorage.getItem(LS_SALES_KEY) || '[]');
+            sales.push(saleData);
+            localStorage.setItem(LS_SALES_KEY, JSON.stringify(sales));
+            
+            salesForm.reset();
+            document.getElementById('saleDate').value = new Date().toISOString().split('T')[0];
+            loadSales();
+            showToast('Venta registrada.');
+        };
+
+        /**
+         * NUEVO: Borra una venta.
+         */
+        const deleteSale = (saleId) => {
+            let sales = JSON.parse(localStorage.getItem(LS_SALES_KEY) || '[]');
+            sales = sales.filter(s => s.id !== saleId);
+            localStorage.setItem(LS_SALES_KEY, JSON.stringify(sales));
+            
+            showToast('Venta eliminada.', true);
+            loadAllData(); // Recalcular todo (stock de huevos, balance)
+        };
+
+        /**
+         * Maneja la compra de stock (SUMA al stock).
+         */
+        const handleStockPurchaseSubmit = (e) => {
+            e.preventDefault();
+            
+            const purchaseData = {
+                id: crypto.randomUUID(),
+                date: document.getElementById('stockPurchaseDate').value,
+                kg: parseFloat(document.getElementById('stockPurchasedKg').value),
+                price: parseFloat(document.getElementById('stockPurchasePrice').value),
+                type: document.getElementById('stockPurchaseType').value,
+                createdAt: new Date().toISOString()
+            };
+
+            if (isNaN(purchaseData.kg) || isNaN(purchaseData.price) || !purchaseData.date || !purchaseData.type) {
+                showToast('Error: Todos los campos son obligatorios.', true);
+                return;
+            }
+
+            const purchases = JSON.parse(localStorage.getItem(LS_PURCHASES_KEY) || '[]');
+            purchases.push(purchaseData);
+            localStorage.setItem(LS_PURCHASES_KEY, JSON.stringify(purchases));
+            
+            let stock = parseFloat(localStorage.getItem(LS_STOCK_KEY) || '0');
+            stock += purchaseData.kg;
+            localStorage.setItem(LS_STOCK_KEY, stock.toString());
+            
+            stockPurchaseForm.reset();
+            document.getElementById('stockPurchaseDate').value = new Date().toISOString().split('T')[0];
+            loadStock();
+            loadPurchases();
+            showToast('Compra de insumo registrada.');
+        };
+        
+        /**
+         * NUEVO: Borra una compra (y RESTA el alimento del stock)
+         */
+        const deletePurchase = (purchaseId) => {
+            let purchases = JSON.parse(localStorage.getItem(LS_PURCHASES_KEY) || '[]');
+            const purchaseToDelete = purchases.find(p => p.id === purchaseId);
+            
+            if (!purchaseToDelete) return;
+            
+            // Revertir el stock
+            const kgToSubtract = purchaseToDelete.kg || 0;
+            let stock = parseFloat(localStorage.getItem(LS_STOCK_KEY) || '0');
+            stock -= kgToSubtract; // Restar
+            localStorage.setItem(LS_STOCK_KEY, stock.toString());
+
+            // Filtrar y guardar
+            purchases = purchases.filter(p => p.id !== purchaseId);
+            localStorage.setItem(LS_PURCHASES_KEY, JSON.stringify(purchases));
+            
+            showToast('Compra eliminada.', true);
+            loadAllData(); // Recalcular todo
+        };
+        
+        // --- 9. FUNCIONES DE REPORTE ---
+
+        const convertToCSV = (data, headers) => {
+            const headerRow = headers.join(';'); 
+            const rows = data.map(obj => 
+                headers.map(header => {
+                    let value = obj[header] === null || obj[header] === undefined ? '' : obj[header];
+                    if (typeof value === 'number') value = value.toString().replace('.', ',');
+                    if (typeof value === 'string') value = `"${value.replace(/"/g, '""')}"`;
+                    return value;
+                }).join(';')
+            );
+            const bom = '\uFEFF';
+            return bom + [headerRow, ...rows].join('\r\n');
+        };
+
+        const downloadCSV = (csvContent, filename) => {
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            link.setAttribute('href', url);
+            link.setAttribute('download', filename);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        };
+
+        const handleReportPeriodChange = () => {
+            reportMonthContainer.classList.toggle('hidden', reportPeriodSelect.value === 'annual');
+        };
+
+        const handleExportUnifiedReport = () => {
+            const period = reportPeriodSelect.value;
+            const month = reportMonthSelect.value;
+            const year = reportYearInput.value;
+            
+            if (!year) {
+                showToast('Por favor, ingresa un año.', true);
+                return;
+            }
+            
+            const prefix = (period === 'annual') ? year : `${year}-${month}`;
+            let unifiedData = [];
+
+            try {
+                // Registros Diarios
+                JSON.parse(localStorage.getItem(LS_RECORDS_KEY) || '[]')
+                    .filter(r => r.date.startsWith(prefix))
+                    .forEach(r => {
+                        // MODIFICADO: Separar Actividades y Observaciones
+                        const activitiesStr = r.activities ? r.activities.join(', ') : '';
+                        unifiedData.push({ Fecha: r.date, Tipo: 'Registro - Cosecha', Detalle: `Huevos Cosechados: ${r.eggsHarvested}`, Monto: 0, Cliente: '', Responsable: r.responsible, Kg: 0, Huevos: r.eggsHarvested, Actividades: activitiesStr, Observaciones: r.observations });
+                        unifiedData.push({ Fecha: r.date, Tipo: 'Registro - Consumo', Detalle: `Alimento Suministrado`, Monto: 0, Cliente: '', Responsable: r.responsible, Kg: -Math.abs(r.feedSupplied), Huevos: 0, Actividades: activitiesStr, Observaciones: r.observations });
+                    });
+
+                // Compras (Insumos)
+                JSON.parse(localStorage.getItem(LS_PURCHASES_KEY) || '[]')
+                    .filter(p => p.date.startsWith(prefix))
+                    .forEach(p => {
+                        unifiedData.push({ Fecha: p.date, Tipo: 'Compra (Insumo)', Detalle: p.type || 'N/A', Monto: -Math.abs(p.price), Cliente: '', Responsable: '', Kg: p.kg, Huevos: 0, Actividades: '', Observaciones: '' });
+                    });
+
+                // Ventas
+                JSON.parse(localStorage.getItem(LS_SALES_KEY) || '[]')
+                    .filter(s => s.date.startsWith(prefix))
+                    .forEach(s => {
+                        unifiedData.push({ Fecha: s.date, Tipo: 'Venta', Detalle: `Venta de ${s.eggs} huevos`, Monto: s.price, Cliente: s.client, Responsable: '', Kg: 0, Huevos: -Math.abs(s.eggs), Actividades: '', Observaciones: '' });
+                    });
+
+                if (unifiedData.length === 0) {
+                    showToast(`No hay datos para ${prefix}.`, true);
+                    return;
+                }
+
+                unifiedData.sort((a, b) => new Date(a.Fecha) - new Date(b.Fecha));
+                
+                // MODIFICADO: Añadir cabecera "Actividades"
+                const headers = ['Fecha', 'Tipo', 'Detalle', 'Monto', 'Cliente', 'Responsable', 'Kg', 'Huevos', 'Actividades', 'Observaciones'];
+                const filename = `reporte_unificado_${prefix}.csv`;
+                
+                const csvContent = convertToCSV(unifiedData, headers);
+                downloadCSV(csvContent, filename);
+                showToast('Reporte unificado generado.', false);
+
+            } catch (error) {
+                console.error('Error al generar CSV:', error);
+                showToast('Error al generar el reporte.', true);
+            }
+        };
+
+        // --- 10. NUEVAS FUNCIONES DE CONFIGURACIÓN ---
+        
+        const addSettingItem = (e, key, inputElement, callback) => {
+            e.preventDefault();
+            const name = inputElement.value.trim();
+            if (!name) return;
+            
+            let items = JSON.parse(localStorage.getItem(key) || '[]');
+            if (items.find(i => i.name.toLowerCase() === name.toLowerCase())) {
+                showToast("Este ítem ya existe.", true);
+                return;
+            }
+            
+            items.push({ id: crypto.randomUUID(), name });
+            localStorage.setItem(key, JSON.stringify(items));
+            inputElement.value = '';
+            callback(); // Recargar listas y desplegables
+        };
+        
+        const deleteSettingItem = (id, key, callback) => {
+            let items = JSON.parse(localStorage.getItem(key) || '[]');
+            items = items.filter(i => i.id !== id);
+            localStorage.setItem(key, JSON.stringify(items));
+            callback(); // Recargar listas y desplegables
+        };
+
+
+        // --- 11. EVENT LISTENERS E INICIALIZACIÓN ---
+        
+        document.addEventListener('DOMContentLoaded', () => {
+        
+            // Navegación
+            navButtons.forEach(button => {
+                button.addEventListener('click', () => showSection(button.dataset.section));
+            });
+
+            // Modales Lotes
+            addLotBtn.addEventListener('click', () => openModal());
+            closeModalBtn.addEventListener('click', closeModal);
+            cancelModalBtn.addEventListener('click', closeModal);
+            lotForm.addEventListener('submit', handleLotFormSubmit);
+            lotDisplayArea.addEventListener('click', handleLotAreaClick);
+
+            // Modal Confirmación Borrado (Genérico)
+            cancelDeleteBtn.addEventListener('click', closeConfirmDeleteModal);
+            confirmDeleteBtn.addEventListener('click', handleConfirmDelete);
+            
+            // Modal Confirmación RESET TOTAL
+            btnResetAllData.addEventListener('click', openConfirmResetModal);
+            cancelResetBtn.addEventListener('click', closeConfirmResetModal);
+            confirmResetBtn.addEventListener('click', handleConfirmReset);
+
+
+            // Formularios de Registros
+            dailyRecordForm.addEventListener('submit', handleDailyRecordSubmit);
+            stockPurchaseForm.addEventListener('submit', handleStockPurchaseSubmit);
+            salesForm.addEventListener('submit', handleSalesFormSubmit);
+            
+            // NUEVO: Listeners para borrado de ítems en listas
+            recentRecordsList.addEventListener('click', (e) => {
+                const button = e.target.closest('[data-action="delete"]');
+                if (button) openConfirmDeleteModal(button.dataset.id, button.dataset.type, '¿Eliminar este registro diario?');
+            });
+            recentSalesList.addEventListener('click', (e) => {
+                const button = e.target.closest('[data-action="delete"]');
+                if (button) openConfirmDeleteModal(button.dataset.id, button.dataset.type, '¿Eliminar esta venta?');
+            });
+            recentPurchasesList.addEventListener('click', (e) => {
+                const button = e.target.closest('[data-action="delete"]');
+                if (button) openConfirmDeleteModal(button.dataset.id, button.dataset.type, '¿Eliminar esta compra de insumo?');
+            });
+
+            
+            // NUEVO: Listeners de Configuración
+            teacherForm.addEventListener('submit', (e) => addSettingItem(e, LS_TEACHERS_KEY, newTeacherNameInput, loadSettings));
+            clientForm.addEventListener('submit', (e) => addSettingItem(e, LS_CLIENTS_KEY, newClientNameInput, loadSettings));
+            activityForm.addEventListener('submit', (e) => addSettingItem(e, LS_ACTIVITIES_KEY, newActivityNameInput, loadSettings)); // NUEVO
+            
+            teacherList.addEventListener('click', (e) => {
+                const button = e.target.closest('[data-action="delete"]');
+                if (button) openConfirmDeleteModal(button.dataset.id, button.dataset.type, `¿Eliminar a ${button.previousElementSibling.textContent}?`);
+            });
+            clientList.addEventListener('click', (e) => {
+                const button = e.target.closest('[data-action="delete"]');
+                if (button) openConfirmDeleteModal(button.dataset.id, button.dataset.type, `¿Eliminar a ${button.previousElementSibling.textContent}?`);
+            });
+            // NUEVO
+            activityList.addEventListener('click', (e) => {
+                const button = e.target.closest('[data-action="delete"]');
+                if (button) openConfirmDeleteModal(button.dataset.id, button.dataset.type, `¿Eliminar actividad "${button.previousElementSibling.textContent}"?`);
+            });
+
+            
+            // Reportes
+            reportPeriodSelect.addEventListener('change', handleReportPeriodChange);
+            btnExportUnified.addEventListener('click', handleExportUnifiedReport);
+            
+            // --- INICIALIZACIÓN ---
+            const now = new Date();
+            const today = now.toISOString().split('T')[0];
+            document.getElementById('recordDate').value = today;
+            document.getElementById('saleDate').value = today;
+            document.getElementById('stockPurchaseDate').value = today;
+            
+            reportMonthSelect.value = (now.getMonth() + 1).toString().padStart(2, '0');
+            reportYearInput.value = now.getFullYear();
+            
+            feather.replace();
+            showSection('dashboard-section');
+            
+            // Cargar todos los datos (incluida la config)
+            loadAllData();
+        });
+        
+    </script>
+</body>
+</html>
+
