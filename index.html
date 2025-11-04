@@ -13,11 +13,10 @@
     <!-- Carga de Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
-    <!-- NUEVO: SDKs de Firebase -->
-    <!-- Asegúrate de usar versiones compatibles (v9+ modular) -->
-    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore.js"></script>
+    <!-- 
+      ELIMINADO: Los scripts de Firebase ya no se cargan aquí.
+      Se importan directamente en el script del módulo al final del body.
+    -->
     
     <style>
         /* Estilos personalizados (sin cambios) */
@@ -442,12 +441,13 @@
         
         // --- 0. IMPORTACIONES DE FIREBASE ---
         // Importar funciones necesarias
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-app.js";
+        // ACTUALIZADO: Versiones de SDK a 9.23.0 (para coincidir)
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
         import { 
             getAuth, 
             signInAnonymously, 
             onAuthStateChanged 
-        } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-auth.js";
+        } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
         import { 
             getFirestore, 
             doc, 
@@ -463,32 +463,23 @@
             Timestamp,
             increment,
             updateDoc
-        } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore.js";
+        } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
 
         
         // --- 1. CONFIGURACIÓN DE FIREBASE ---
         
         // ¡¡¡IMPORTANTE!!!
-        // PEGA TU CONFIG DE FIREBASE AQUI
-        // (La obtienes de la consola de Firebase > Configuración del proyecto > Tus apps)
-        const firebaseConfig = {// Import the functions you need from the SDKs you need
-import { initializeApp } from "firebase/app";
-import { getAnalytics } from "firebase/analytics";
-// TODO: Add SDKs for Firebase products that you want to use
-// https://firebase.google.com/docs/web/setup#available-libraries
-
-// Your web app's Firebase configuration
-// For Firebase JS SDK v7.20.0 and later, measurementId is optional
-const firebaseConfig = {
-  apiKey: "AIzaSyDMjancMAkR86g1wz2RtIupUjiZkiGRQjE",
-  authDomain: "gestion-avicola-7b57b.firebaseapp.com",
-  projectId: "gestion-avicola-7b57b",
-  storageBucket: "gestion-avicola-7b57b.firebasestorage.app",
-  messagingSenderId: "596600543351",
-  appId: "1:596600543351:web:4bc1af8bc6e4ad5806ce72",
-  measurementId: "G-7BZN1JTVKM"
-};
-
+        // Configuración de Firebase del usuario.
+        const firebaseConfig = {
+          apiKey: "AIzaSyDMjancMAkR86g1wz2RtIupUjiZkiGRQjE",
+          authDomain: "gestion-avicola-7b57b.firebaseapp.com",
+          projectId: "gestion-avicola-7b57b",
+          // CORRECCIÓN: El storageBucket debe terminar en .appspot.com
+          storageBucket: "gestion-avicola-7b57b.appspot.com",
+          messagingSenderId: "596600543351",
+          appId: "1:596600543351:web:4bc1af8bc6e4ad5806ce72"
+          // measurementId: "G-7BZN1JTVKM" // Eliminado: No se usa Analytics y puede causar errores.
+        };
 
         // Variables globales de Firebase y Auth
         let app, db, auth, userId;
@@ -872,7 +863,7 @@ const firebaseConfig = {
                 else noRecordsMessage.classList.add('hidden');
                 
                 // Ordenar por fecha de creación para mostrar los más nuevos primero
-                localRecordsCache.sort((a, b) => b.createdAt.seconds - a.createdAt.seconds);
+                localRecordsCache.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
                 localRecordsCache.forEach(record => recentRecordsList.appendChild(renderRecordList(record)));
                 
                 calculateDashboardStats();
@@ -889,7 +880,7 @@ const firebaseConfig = {
                 if (localPurchasesCache.length === 0) noPurchasesMessage.classList.remove('hidden');
                 else noPurchasesMessage.classList.add('hidden');
                 
-                localPurchasesCache.sort((a, b) => b.createdAt.seconds - a.createdAt.seconds);
+                localPurchasesCache.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
                 localPurchasesCache.forEach(purchase => recentPurchasesList.appendChild(renderPurchaseList(purchase)));
                 
                 calculateDashboardStats();
@@ -905,7 +896,7 @@ const firebaseConfig = {
                 if (localSalesCache.length === 0) noSalesMessage.classList.remove('hidden');
                 else noSalesMessage.classList.add('hidden');
                 
-                localSalesCache.sort((a, b) => b.createdAt.seconds - a.createdAt.seconds);
+                localSalesCache.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
                 localSalesCache.forEach(sale => recentSalesList.appendChild(renderSaleList(sale)));
 
                 calculateDashboardStats();
@@ -925,6 +916,35 @@ const firebaseConfig = {
                 calculateDashboardStats();
             });
             
+            // Función auxiliar para rellenar desplegables
+            const populateDropdowns = (selectElement, items, placeholder) => {
+                selectElement.innerHTML = `<option value="">-- Seleccionar ${placeholder} --</option>`;
+                items.forEach(item => {
+                    const option = document.createElement('option');
+                    option.value = item.name;
+                    option.textContent = item.name;
+                    selectElement.appendChild(option);
+                });
+            };
+
+            // Función auxiliar para rellenar checkboxes de actividades
+            const populateActivitiesCheckboxes = (activities) => {
+                recordActivitiesCheckboxes.innerHTML = '';
+                if (activities.length === 0) {
+                    recordActivitiesCheckboxes.innerHTML = `<p class="text-gray-500 text-sm italic col-span-full">No hay actividades en Configuración.</p>`;
+                } else {
+                    activities.forEach(activity => {
+                        const label = document.createElement('label');
+                        label.className = 'checkbox-label';
+                        label.innerHTML = `
+                            <input type="checkbox" value="${activity.name}" class="checkbox-input">
+                            <span>${activity.name}</span>
+                        `;
+                        recordActivitiesCheckboxes.appendChild(label);
+                    });
+                }
+            };
+
             // Listener de Configuración (Docentes, Clientes, Actividades)
             const createSettingsListener = (collectionRef, listElement, type, cache, dropdownSelect = null, placeholder = '') => {
                 onSnapshot(query(collectionRef), (snapshot) => {
@@ -933,6 +953,7 @@ const firebaseConfig = {
                     snapshot.forEach(doc => cache.push({ ...doc.data(), id: doc.id }));
                     
                     if (cache.length === 0) listElement.innerHTML = `<p class="text-gray-500 italic">No hay ${type}s guardados.</p>`;
+                    cache.sort((a,b) => a.name.localeCompare(b.name)); // Ordenar alfabéticamente
                     cache.forEach(item => listElement.appendChild(renderSettingsList(item, type)));
                     
                     if (dropdownSelect) populateDropdowns(dropdownSelect, cache, placeholder);
@@ -1093,6 +1114,9 @@ const firebaseConfig = {
                         batch.delete(docRef);
                         batch.update(stockDocRef, { kg: increment(feedToReturn) });
                         await batch.commit();
+                    } else {
+                        // Borrar aunque no tenga feed (por si acaso)
+                         await deleteDoc(docRef);
                     }
                 } else if (type === 'purchase') {
                     // Caso especial: Restar stock al borrar compra
@@ -1103,6 +1127,9 @@ const firebaseConfig = {
                         batch.delete(docRef);
                         batch.update(stockDocRef, { kg: increment(kgToSubtract) });
                         await batch.commit();
+                    } else {
+                        // Borrar aunque no tenga kg (por si acaso)
+                         await deleteDoc(docRef);
                     }
                 } else {
                     // Borrado simple (Lot, Sale, Teacher, Client, Activity)
@@ -1326,6 +1353,13 @@ const firebaseConfig = {
 
         const initializeAppAndAuth = () => {
             try {
+                // Verificar que la config no sea placeholder
+                if (firebaseConfig.apiKey.startsWith("AIzaSy") === false) {
+                     showToast("Error: Revisa tu 'firebaseConfig'. No parece válida.", true);
+                     console.error("firebaseConfig parece ser un placeholder.");
+                     return; 
+                }
+
                 app = initializeApp(firebaseConfig);
                 db = getFirestore(app);
                 auth = getAuth(app);
@@ -1339,30 +1373,17 @@ const firebaseConfig = {
                         initializeFirestoreListeners();
                     } else {
                         // Usuario no logueado, loguear anónimamente
-                        
-                        // NUEVA VERIFICACIÓN: No intentar loguear si las keys son placeholders
-                        if (firebaseConfig.apiKey === "TU_API_KEY") {
-                            console.error("Login anónimo omitido: firebaseConfig no está seteado.");
-                            // El toast del 'catch' principal ya se habrá mostrado.
-                            // showToast("Error: Configura tu 'firebaseConfig' para iniciar sesión.", true);
-                            return; // No continuar
-                        }
-                        
                         signInAnonymously(auth).catch((error) => {
                             console.error("Error en login anónimo:", error);
                             // Error más específico
-                            showToast("Error de autenticación. ¿Pegaste una API key válida?", true);
+                            showToast("Error de autenticación. Revisa tu API key y config.", true);
                         });
                     }
                 });
             } catch (error) {
                 console.error("Error al inicializar Firebase:", error);
-                if (firebaseConfig.apiKey === "TU_API_KEY") {
-                    showToast("Error: Pega tu 'firebaseConfig' en el script para conectar la app.", true);
-                } else {
-                    // Error más específico
-                    showToast("Error al conectar con Firebase. ¿API Key válida?", true);
-                }
+                // Error más específico
+                showToast("Error al conectar con Firebase. ¿API Key válida?", true);
             }
         };
 
@@ -1376,5 +1397,3 @@ const firebaseConfig = {
     </script>
 </body>
 </html>
-
-
