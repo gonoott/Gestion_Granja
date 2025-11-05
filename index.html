@@ -13,427 +13,512 @@
     <!-- Carga de Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
-    <!-- 
-      ELIMINADO: Los scripts de Firebase ya no se cargan aquí.
-      Se importan directamente en el script del módulo al final del body.
-    -->
-    
     <style>
         /* Estilos personalizados (sin cambios) */
         body {
             font-family: 'Inter', sans-serif;
+            background-color: #f4f7f6;
         }
-        .nav-tab {
-            @apply px-4 py-3 text-sm font-medium text-gray-600 rounded-lg hover:bg-green-100 hover:text-green-700 transition-colors duration-200;
+        /* Para la barra de scroll en la lista de registros */
+        .record-list {
+            max-height: 400px;
+            overflow-y: auto;
         }
-        .nav-tab.active {
-            @apply bg-green-600 text-white shadow-lg;
-        }
-        .app-section {
-            @apply p-4 md:p-8;
-        }
-        .stat-card {
-            @apply bg-white p-6 rounded-xl shadow-lg flex items-center space-x-4;
-        }
-        .form-input {
-            @apply w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500;
-        }
-        .form-select {
-            @apply w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 bg-white appearance-none;
-        }
+        /* Estilos para el modal */
         .modal {
-            @apply fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center p-4 transition-opacity duration-300 opacity-0 pointer-events-none;
-        }
-        .modal-open {
-            @apply opacity-100 pointer-events-auto;
+            transition: opacity 0.25s ease;
         }
         .modal-content {
-            @apply bg-white rounded-xl shadow-2xl w-full max-w-2xl transform scale-95 transition-transform duration-300;
+            transition: transform 0.25s ease;
+            max-width: 500px;
         }
-        .modal-open .modal-content {
-            @apply scale-100;
+        /* Estilos para el botón de navegación activo */
+        .nav-link-active {
+            background-color: #4f46e5; /* indigo-600 */
+            color: white;
         }
-        .confirm-modal {
-            @apply fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center p-4 transition-opacity duration-300 opacity-0 pointer-events-none;
+        .nav-link {
+            transition: all 0.2s;
         }
-        .confirm-modal-open {
-            @apply opacity-100 pointer-events-auto;
+        .nav-link:hover {
+            background-color: #eef2ff; /* indigo-50 */
+            color: #4f46e5; /* indigo-600 */
         }
-        .confirm-modal-content {
-            @apply bg-white rounded-xl shadow-2xl w-full max-w-md p-8 transform scale-95 transition-transform duration-300;
+        
+        /* Estilos para las tarjetas de configuración */
+        .config-card {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            padding: 1.5rem;
         }
-        .confirm-modal-open .confirm-modal-content {
-            @apply scale-100;
+        .config-card h3 {
+            font-size: 1.125rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            border-bottom: 1px solid #e5e7eb;
+            padding-bottom: 0.5rem;
         }
-        .toast {
-            @apply fixed top-5 right-5 bg-green-600 text-white px-6 py-4 rounded-xl shadow-lg transform translate-x-full transition-transform duration-300;
+        .config-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid #f3f4f6;
         }
-        .toast.show {
-            @apply translate-x-0;
+        .config-item:last-child {
+            border-bottom: none;
         }
-        .toast.error {
-            @apply bg-red-600;
+        .config-list {
+            max-height: 200px;
+            overflow-y: auto;
         }
-        .settings-list-item {
-            @apply flex justify-between items-center p-3 bg-gray-50 rounded-lg border border-gray-200;
+        
+        /* Ocultar flechas en input number */
+        input[type=number]::-webkit-inner-spin-button, 
+        input[type=number]::-webkit-outer-spin-button { 
+          -webkit-appearance: none; 
+          margin: 0; 
         }
-        .delete-btn {
-            @apply text-gray-400 hover:text-red-500 transition-colors duration-200;
-        }
-        .checkbox-container {
-            @apply grid grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-2;
-        }
-        .checkbox-label {
-            @apply flex items-center space-x-2 text-sm font-medium text-gray-700 cursor-pointer;
-        }
-        .checkbox-input {
-            @apply w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500;
+        input[type=number] {
+          -moz-appearance: textfield;
         }
     </style>
+    
+    <!-- Carga de la fuente Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body class="bg-gray-100 text-gray-800">
 
-    <!-- Contenedor Principal -->
-    <div class="flex flex-col min-h-screen">
-
-        <!-- Encabezado -->
-        <header class="bg-white shadow-md w-full">
-            <div class="container mx-auto px-6 py-4 flex justify-between items-center">
-                <div class="flex items-center space-x-2">
-                    <i data-feather="grid" class="text-green-600 w-8 h-8"></i>
-                    <!-- Título actualizado -->
-                    <h1 class="text-2xl font-bold text-gray-800">Gestión Avícola (Nube)</h1>
-                </div>
-                <!-- Navegación Principal (sin cambios) -->
-                <nav class="flex items-center space-x-1 flex-wrap">
-                    <button id="nav-dashboard" class="nav-tab active" data-section="dashboard-section">
-                        <i data-feather="home" class="inline-block w-5 h-5 mr-1"></i> Dashboard
-                    </button>
-                    <button id="nav-records" class="nav-tab" data-section="records-section">
-                        <i data-feather="clipboard" class="inline-block w-5 h-5 mr-1"></i> Registros Diarios
-                    </button>
-                    <button id="nav-lots" class="nav-tab" data-section="lots-section">
-                        <i data-feather="archive" class="inline-block w-5 h-5 mr-1"></i> Lotes / Corrales
-                    </button>
-                    <button id="nav-sales" class="nav-tab" data-section="sales-section">
-                        <i data-feather="dollar-sign" class="inline-block w-5 h-5 mr-1"></i> Ventas
-                    </button>
-                    <button id="nav-purchases" class="nav-tab" data-section="purchases-section">
-                        <i data-feather="truck" class="inline-block w-5 h-5 mr-1"></i> Compras (Insumos)
-                    </button>
-                    <button id="nav-reports" class="nav-tab" data-section="reports-section">
-                        <i data-feather="download" class="inline-block w-5 h-5 mr-1"></i> Reportes
-                    </button>
-                    <button id="nav-settings" class="nav-tab" data-section="settings-section">
-                        <i data-feather="settings" class="inline-block w-5 h-5 mr-1"></i> Configuración
-                    </button>
-                </nav>
+    <!-- Contenedor principal -->
+    <div class="flex flex-col md:flex-row min-h-screen">
+        
+        <!-- Barra de Navegación Lateral -->
+        <nav class="bg-white shadow-lg md:w-64 flex-shrink-0">
+            <div class="p-6">
+                <h1 class="text-2xl font-bold text-indigo-600">Gestión Avícola</h1>
             </div>
-        </header>
+            <div class="px-3 py-2">
+                <a href="#" class="flex items-center gap-3 px-4 py-3 rounded-lg nav-link" data-tab="dashboard">
+                    <i data-feather="grid"></i> Dashboard
+                </a>
+                <a href="#" class="flex items-center gap-3 px-4 py-3 rounded-lg nav-link" data-tab="records">
+                    <i data-feather="edit"></i> Registros Diarios
+                </a>
+                <a href="#" class="flex items-center gap-3 px-4 py-3 rounded-lg nav-link" data-tab="lots">
+                    <i data-feather="home"></i> Lotes / Corrales
+                </a>
+                <a href="#" class="flex items-center gap-3 px-4 py-3 rounded-lg nav-link" data-tab="sales">
+                    <i data-feather="dollar-sign"></i> Ventas
+                </a>
+                <a href="#" class="flex items-center gap-3 px-4 py-3 rounded-lg nav-link" data-tab="reports">
+                    <i data-feather="download"></i> Reportes
+                </a>
+                <a href="#" class="flex items-center gap-3 px-4 py-3 rounded-lg nav-link" data-tab="config">
+                    <i data-feather="settings"></i> Configuración
+                </a>
+            </div>
+        </nav>
 
-        <!-- Contenido Principal (HTML sin cambios) -->
-        <main class="container mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-grow">
-
-            <!-- SECCIÓN 1: DASHBOARD -->
-            <section id="dashboard-section" class="app-section">
-                <!-- ... (HTML sin cambios) ... -->
-                <h2 class="text-2xl font-bold text-gray-800 mb-6">Dashboard de Métricas</h2>
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                    <div class="bg-white p-6 rounded-xl shadow-lg flex items-center space-x-4">
-                        <div class="p-3 rounded-full bg-blue-100 text-blue-600"><i data-feather="users" class="w-6 h-6"></i></div>
-                        <div><p class="text-sm font-medium text-gray-500">Total Animales</p><p class="text-3xl font-bold text-gray-900"><span id="stat-total-hens">0</span></p></div>
-                    </div>
-                    <div class="bg-white p-6 rounded-xl shadow-lg flex items-center space-x-4">
-                        <div class="p-3 rounded-full bg-yellow-100 text-yellow-600"><i data-feather="package" class="w-6 h-6"></i></div>
-                        <div><p class="text-sm font-medium text-gray-500">Stock Alimento</p><p class="text-3xl font-bold text-gray-900"><span id="stat-feed-stock">0</span> kg</p></div>
-                    </div>
-                    <div class="bg-white p-6 rounded-xl shadow-lg flex items-center space-x-4">
-                        <div class="p-3 rounded-full bg-green-100 text-green-600"><i data-feather="egg" class="w-6 h-6"></i></div>
-                        <div><p class="text-sm font-medium text-gray-500">Huevos Cosechados (Hoy)</p><p class="text-3xl font-bold text-gray-900"><span id="stat-eggs-today">0</span></p></div>
-                    </div>
-                    <div class="bg-white p-6 rounded-xl shadow-lg flex items-center space-x-4">
-                        <div class="p-3 rounded-full bg-cyan-100 text-cyan-600"><i data-feather="box" class="w-6 h-6"></i></div>
-                        <div><p class="text-sm font-medium text-gray-500">Huevos en Stock (Venta)</p><p class="text-3xl font-bold text-gray-900"><span id="stat-egg-stock">0</span></p></div>
-                    </div>
-                    <div class="bg-white p-6 rounded-xl shadow-lg flex items-center space-x-4">
-                        <div class="p-3 rounded-full bg-red-100 text-red-600"><i data-feather="calendar" class="w-6 h-6"></i></div>
-                        <div><p class="text-sm font-medium text-gray-500">Días de Alimento Restantes</d><p class="text-3xl font-bold text-gray-900"><span id="stat-days-remaining">0</span> <span class="text-lg">días</span></p></div>
-                    </div>
-                    <div class="bg-white p-6 rounded-xl shadow-lg flex items-center space-x-4">
-                        <div class="p-3 rounded-full bg-indigo-100 text-indigo-600"><i data-feather="bar-chart-2" class="w-6 h-6"></i></div>
-                        <div><p class="text-sm font-medium text-gray-500">Ventas (Hoy)</p><p class="text-3xl font-bold text-gray-900">$<span id="stat-sales-today">0</span></p></div>
-                    </div>
-                    <div class="bg-white p-6 rounded-xl shadow-lg flex items-center space-x-4">
-                        <div class="p-3 rounded-full bg-teal-100 text-teal-600"><i data-feather="trending-up" class="w-6 h-6"></i></div>
-                        <div><p class="text-sm font-medium text-gray-500">Balance (Mes Actual)</p><p class="text-3xl font-bold text-gray-900">$<span id="stat-balance-month">0</span></p></div>
-                    </div>
-                </div>
-                <div class="bg-white p-6 rounded-xl shadow-lg mb-8">
-                    <h3 class="text-xl font-bold text-gray-800 mb-4">Análisis de Producción (Huevos por Mes)</h3>
-                    <div class="h-80"><canvas id="productionChart"></canvas></div>
-                </div>
-                <div class="bg-white p-6 rounded-xl shadow-lg">
-                    <h3 class="text-xl font-bold text-gray-800 mb-4">Análisis de Ventas (Total Huevos por Cliente)</h3>
-                    <div class="h-80"><canvas id="salesChart"></canvas></div>
-                </div>
-            </section>
+        <!-- Contenido Principal -->
+        <main class="flex-1 p-6 md:p-10">
             
-            <!-- SECCIÓN 2: REGISTROS DIARIOS -->
-            <section id="records-section" class="app-section hidden">
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                    <div class="bg-white p-6 rounded-xl shadow-lg">
-                        <h2 class="text-2xl font-bold text-gray-800 mb-6">Registro Diario</h2>
-                        <form id="daily-record-form" class="space-y-6">
-                            <div>
-                                <label for="recordDate" class="block text-sm font-medium text-gray-700 mb-1">Fecha</label>
-                                <input type="date" id="recordDate" class="form-input" required>
-                            </div>
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div><label for="eggsHarvested" class="block text-sm font-medium text-gray-700 mb-1">Huevos Cosechados</label><input type="number" id="eggsHarvested" class="form-input" placeholder="0" required></div>
-                                <div><label for="feedSupplied" class="block text-sm font-medium text-gray-700 mb-1">Alimento Suministrado (kg)</label><input type="number" step="0.1" id="feedSupplied" class="form-input" placeholder="0.0 kg" required></div>
-                            </div>
-                            <div>
-                                <label for="recordResponsible" class="block text-sm font-medium text-gray-700 mb-1">Docente / Responsable</label>
-                                <select id="recordResponsible" class="form-select" required>
-                                    <option value="">-- Seleccionar --</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Actividades Realizadas</label>
-                                <div id="record-activities-checkboxes" class="checkbox-container p-4 bg-gray-50 rounded-lg border border-gray-200">
-                                    <p class="text-gray-500 text-sm italic col-span-full">No hay actividades en Configuración.</p>
-                                </div>
-                            </div>
-                            <div>
-                                <label for="recordObservations" class="block text-sm font-medium text-gray-700 mb-1">Observaciones</label>
-                                <textarea id="recordObservations" rows="3" class="form-input" placeholder="Notas libres, imprevistos, etc."></textarea>
-                            </div>
-                            <div class="text-right">
-                                <button type="submit" class="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg shadow-lg transition duration-300">
-                                    Guardar Registro
-                                </button>
-                            </div>
-                        </form>
+            <!-- SECCIÓN: Dashboard -->
+            <div id="dashboard-content" class="tab-content">
+                <h2 class="text-3xl font-bold mb-6">Dashboard</h2>
+                
+                <!-- Métricas Clave -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
+                    <div class="bg-white p-6 rounded-lg shadow-md">
+                        <h3 class="text-sm font-medium text-gray-500">Total de Gallinas</h3>
+                        <p class="text-3xl font-bold" id="metric-total-hens">0</p>
                     </div>
-                    <div class="space-y-8">
-                        <div class="bg-white p-6 rounded-xl shadow-lg">
-                            <h3 class="text-xl font-bold text-gray-800 mb-4">Registros Recientes</h3>
-                            <div id="recent-records-list" class="space-y-4 h-[400px] overflow-y-auto">
-                                <p id="no-records-message" class="text-gray-500">No hay registros diarios.</p>
+                    <div class="bg-white p-6 rounded-lg shadow-md">
+                        <h3 class="text-sm font-medium text-gray-500">Stock de Alimento (kg)</h3>
+                        <p class="text-3xl font-bold" id="metric-food-stock">0 <span class="text-lg">kg</span></p>
+                    </div>
+                    <div class="bg-white p-6 rounded-lg shadow-md">
+                        <h3 class="text-sm font-medium text-gray-500">Días de Alimento Restantes</h3>
+                        <p class="text-3xl font-bold" id="metric-food-days-left">0 <span class="text-lg">días</span></p>
+                    </div>
+                    <!-- MODIFICADO: Ahora es total del MES -->
+                    <div class="bg-white p-6 rounded-lg shadow-md">
+                        <h3 class="text-sm font-medium text-gray-500">Huevos Cosechados (Mes)</h3>
+                        <p class="text-3xl font-bold" id="metric-eggs-today">0</p>
+                    </div>
+                    <!-- MODIFICADO: Ahora es total del MES -->
+                    <div class="bg-white p-6 rounded-lg shadow-md">
+                        <h3 class="text-sm font-medium text-gray-500">Ventas (Mes)</h3>
+                        <p class="text-3xl font-bold" id="metric-sales-today">$0</p>
+                    </div>
+                    <!-- NUEVO: Stock de Huevos -->
+                    <div class="bg-white p-6 rounded-lg shadow-md">
+                        <h3 class="text-sm font-medium text-gray-500">Huevos en Stock</h3>
+                        <p class="text-3xl font-bold" id="metric-egg-stock">0</p>
+                    </div>
+                </div>
+                
+                <!-- MODIFICADO: Ahora es Balance del MES -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                    <div class="bg-white p-6 rounded-lg shadow-md">
+                        <h3 class="text-sm font-medium text-gray-500">Balance (Mes Actual)</h3>
+                        <p class="text-3xl font-bold" id="metric-balance-month">$0</p>
+                        <p class="text-sm text-gray-500" id="metric-balance-month-detail">(Ingresos: $0 - Gastos: $0)</p>
+                    </div>
+                    <div class="bg-white p-6 rounded-lg shadow-md">
+                        <h3 class="text-sm font-medium text-gray-500">Balance Económico (Total)</h3>
+                        <p class="text-3xl font-bold" id="metric-balance-total">$0</p>
+                        <p class="text-sm text-gray-500" id="metric-balance-detail">(Ingresos: $0 - Gastos: $0)</p>
+                    </div>
+                </div>
+
+                <!-- Gráficos -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div class="bg-white p-6 rounded-lg shadow-md">
+                        <h3 class="text-lg font-semibold mb-4">Producción de Huevos (por Mes)</h3>
+                        <canvas id="eggProductionChart"></canvas>
+                    </div>
+                    <div class="bg-white p-6 rounded-lg shadow-md">
+                        <h3 class="text-lg font-semibold mb-4">Ventas por Cliente</h3>
+                        <canvas id="salesByClientChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECCIÓN: Registros Diarios -->
+            <div id="records-content" class="tab-content" style="display: none;">
+                <h2 class="text-3xl font-bold mb-6">Registros Diarios</h2>
+                
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <!-- Columna de Formularios -->
+                    <div>
+                        <!-- Formulario de Registro Diario -->
+                        <div class="bg-white p-6 rounded-lg shadow-md mb-6">
+                            <h3 class="text-xl font-semibold mb-4">Cargar Registro del Día</h3>
+                            <form id="daily-record-form" class="space-y-4">
+                                <div>
+                                    <label for="record-date" class="block text-sm font-medium text-gray-700">Fecha</label>
+                                    <input type="date" id="record-date" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                                </div>
+                                <div>
+                                    <label for="record-eggs" class="block text-sm font-medium text-gray-700">Huevos Cosechados</label>
+                                    <input type="number" id="record-eggs" placeholder="Ej: 120" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                                </div>
+                                <div>
+                                    <label for="record-food" class="block text-sm font-medium text-gray-700">Alimento Suministrado (kg)</label>
+                                    <input type="number" step="0.01" id="record-food" placeholder="Ej: 15.5" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                                </div>
+                                <div>
+                                    <!-- NUEVO: Desplegable de Docentes -->
+                                    <label for="record-responsible" class="block text-sm font-medium text-gray-700">Docente / Responsable</label>
+                                    <select id="record-responsible" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 bg-white">
+                                        <option value="">Seleccione un docente</option>
+                                        <!-- Opciones se cargarán desde JS -->
+                                    </select>
+                                </div>
+                                
+                                <!-- NUEVO: Checkboxes de Actividades -->
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">Actividades Realizadas</label>
+                                    <div id="record-activities-checkboxes" class="mt-2 space-y-2 max-h-40 overflow-y-auto border p-3 rounded-md">
+                                        <!-- Checkboxes se cargarán desde JS -->
+                                        <p class="text-gray-500 text-sm">Cargue actividades en Configuración.</p>
+                                    </div>
+                                </div>
+                                
+                                <!-- NUEVO: Campo Observaciones -->
+                                <div>
+                                    <label for="record-observations" class="block text-sm font-medium text-gray-700">Observaciones</label>
+                                    <textarea id="record-observations" rows="3" placeholder="Ej: Se observó un animal enfermo..." class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"></textarea>
+                                </div>
+                                <button type="submit" class="w-full bg-indigo-600 text-white px-4 py-2 rounded-md font-semibold hover:bg-indigo-700 transition">Guardar Registro</button>
+                            </form>
+                        </div>
+                        
+                        <!-- Formulario de Compra de Alimento -->
+                        <div class="bg-white p-6 rounded-lg shadow-md">
+                            <h3 class="text-xl font-semibold mb-4">Comprar Insumo (Alimento)</h3>
+                            <form id="buy-food-form" class="space-y-4">
+                                <div>
+                                    <label for="buy-date" class="block text-sm font-medium text-gray-700">Fecha de Compra</label>
+                                    <input type="date" id="buy-date" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                                </div>
+                                <!-- NUEVO: Tipo de Alimento -->
+                                <div>
+                                    <label for="buy-type" class="block text-sm font-medium text-gray-700">Tipo de Insumo</label>
+                                    <input type="text" id="buy-type" placeholder="Ej: Ponedora Fase 1" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                                </div>
+                                <div>
+                                    <label for="buy-amount" class="block text-sm font-medium text-gray-700">Cantidad (kg)</label>
+                                    <input type="number" step="0.01" id="buy-amount" placeholder="Ej: 500" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                                </div>
+                                <div>
+                                    <label for="buy-price" class="block text-sm font-medium text-gray-700">Precio Total ($)</label>
+                                    <input type="number" step="0.01" id="buy-price" placeholder="Ej: 25000" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                                </div>
+                                <button type="submit" class="w-full bg-green-600 text-white px-4 py-2 rounded-md font-semibold hover:bg-green-700 transition">Añadir al Stock</button>
+                            </form>
+                        </div>
+                    </div>
+                    
+                    <!-- Columna de Listas -->
+                    <div>
+                        <!-- Lista de Registros Recientes -->
+                        <div class="bg-white p-6 rounded-lg shadow-md mb-6">
+                            <h3 class="text-xl font-semibold mb-4">Registros Recientes</h3>
+                            <div id="daily-records-list" class="space-y-3 record-list pr-2">
+                                <!-- Los registros se cargarán aquí -->
+                            </div>
+                        </div>
+                        
+                        <!-- Lista de Compras Recientes -->
+                        <div class="bg-white p-6 rounded-lg shadow-md">
+                            <h3 class="text-xl font-semibold mb-4">Compras Recientes de Insumos</h3>
+                            <div id="food-purchases-list" class="space-y-3 record-list pr-2">
+                                <!-- Las compras se cargarán aquí -->
                             </div>
                         </div>
                     </div>
                 </div>
-            </section>
-            
-            <!-- SECCIÓN 3: LOTES / CORRALES -->
-            <section id="lots-section" class="app-section hidden">
+            </div>
+
+            <!-- SECCIÓN: Lotes / Corrales -->
+            <div id="lots-content" class="tab-content" style="display: none;">
                 <div class="flex justify-between items-center mb-6">
-                    <h2 class="text-2xl font-bold text-gray-800">Lotes / Corrales</h2>
-                    <button id="add-lot-btn" class="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-5 rounded-lg shadow-lg flex items-center transition duration-300">
-                        <i data-feather="plus" class="w-5 h-5 mr-2"></i> Añadir Lote
+                    <h2 class="text-3xl font-bold">Lotes / Corrales</h2>
+                    <button id="add-lot-button" class="bg-indigo-600 text-white px-5 py-2 rounded-lg font-semibold hover:bg-indigo-700 transition flex items-center gap-2">
+                        <i data-feather="plus" class="w-5 h-5"></i> Añadir Lote
                     </button>
                 </div>
-                <div id="lot-display-area" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
-                <div id="no-lots-message" class="text-center text-gray-500 py-16 bg-white rounded-xl shadow-lg hidden">
-                    <i data-feather="archive" class="w-12 h-12 mx-auto mb-4"></i>
-                    <p>No hay lotes registrados. ¡Añade el primero!</p>
+                
+                <div id="hen-lots-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <!-- Las tarjetas de lotes se cargarán aquí -->
                 </div>
-            </section>
+            </div>
 
-            <!-- SECCIÓN 4: VENTAS -->
-            <section id="sales-section" class="app-section hidden">
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                    <div class="bg-white p-6 rounded-xl shadow-lg">
-                        <h2 class="text-2xl font-bold text-gray-800 mb-6">Registrar Venta de Huevos</h2>
-                        <form id="sales-form" class="space-y-6">
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div><label for="saleDate" class="block text-sm font-medium text-gray-700 mb-1">Fecha</label><input type="date" id="saleDate" class="form-input" required></div>
-                                <div><label for="saleEggs" class="block text-sm font-medium text-gray-700 mb-1">Cantidad de Huevos</label><input type="number" id="saleEggs" class="form-input" placeholder="0" required></div>
-                            </div>
-                            <div><label for="salePrice" class="block text-sm font-medium text-gray-700 mb-1">Precio Total (Venta)</label><input type="number" step="0.01" id="salePrice" class="form-input" placeholder="0.00" required></div>
+            <!-- SECCIÓN: Ventas -->
+            <div id="sales-content" class="tab-content" style="display: none;">
+                <h2 class="text-3xl font-bold mb-6">Gestión de Ventas</h2>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <!-- Formulario de Venta -->
+                    <div class="bg-white p-6 rounded-lg shadow-md">
+                        <h3 class="text-xl font-semibold mb-4">Registrar Venta</h3>
+                        <form id="sales-form" class="space-y-4">
                             <div>
-                                <label for="saleClient" class="block text-sm font-medium text-gray-700 mb-1">Cliente</label>
-                                <select id="saleClient" class="form-select" required>
-                                    <option value="">-- Seleccionar --</option>
+                                <label for="sale-date" class="block text-sm font-medium text-gray-700">Fecha</label>
+                                <input type="date" id="sale-date" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                            </div>
+                            <div>
+                                <label for="sale-quantity" class="block text-sm font-medium text-gray-700">Cantidad de Huevos</label>
+                                <input type="number" id="sale-quantity" placeholder="Ej: 30 (1 maple)" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                            </div>
+                            <div>
+                                <label for="sale-price" class="block text-sm font-medium text-gray-700">Precio Total ($)</label>
+                                <input type="number" step="0.01" id="sale-price" placeholder="Ej: 1500" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                            </div>
+                            <div>
+                                <!-- NUEVO: Desplegable de Clientes -->
+                                <label for="sale-client" class="block text-sm font-medium text-gray-700">Cliente</o>
+                                <select id="sale-client" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 bg-white">
+                                    <option value="">Seleccione un cliente</option>
+                                    <!-- Opciones se cargarán desde JS -->
                                 </select>
                             </div>
-                            <div class="text-right"><button type="submit" class="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg shadow-lg transition duration-300">Guardar Venta</button></div>
+                            <button type="submit" class="w-full bg-blue-600 text-white px-4 py-2 rounded-md font-semibold hover:bg-blue-700 transition">Guardar Venta</button>
                         </form>
                     </div>
-                    <div class="bg-white p-6 rounded-xl shadow-lg">
-                        <h2 class="text-2xl font-bold text-gray-800 mb-6">Ventas Recientes</h2>
-                        <div id="recent-sales-list" class="space-y-4 h-[400px] overflow-y-auto">
-                            <p id="no-sales-message" class="text-gray-500">No hay ventas registradas.</p>
+                    
+                    <!-- Lista de Ventas Recientes -->
+                    <div class="bg-white p-6 rounded-lg shadow-md">
+                        <h3 class="text-xl font-semibold mb-4">Ventas Recientes</h3>
+                        <div id="sales-list" class="space-y-3 record-list pr-2">
+                            <!-- Las ventas se cargarán aquí -->
                         </div>
                     </div>
                 </div>
-            </section>
+            </div>
             
-            <!-- SECCIÓN 5: COMPRAS (INSUMOS) -->
-            <section id="purchases-section" class="app-section hidden">
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                    <div class="bg-white p-6 rounded-xl shadow-lg">
-                        <h2 class="text-2xl font-bold text-gray-800 mb-6">Registrar Compra de Insumos</h2>
-                        <form id="stock-purchase-form" class="space-y-6">
-                            <div><label for="stockPurchaseDate" class="block text-sm font-medium text-gray-700 mb-1">Fecha</LabeL><input type="date" id="stockPurchaseDate" class="form-input" required></div>
-                            <div class="grid grid-cols-2 gap-4">
-                                <div><label for="stockPurchasedKg" class="block text-sm font-medium text-gray-700 mb-1">Cantidad (kg)</label><input type="number" step="0.1" id="stockPurchasedKg" class="form-input" placeholder="0.0 kg" required></div>
-                                <div><label for="stockPurchasePrice" class="block text-sm font-medium text-gray-700 mb-1">Precio Total ($)</label><input type="number" step="0.01" id="stockPurchasePrice" class="form-input" placeholder="0.00" required></div>
+            <!-- SECCIÓN: Reportes -->
+            <div id="reports-content" class="tab-content" style="display: none;">
+                <h2 class="text-3xl font-bold mb-6">Generar Reportes</h2>
+                <div class="bg-white p-6 rounded-lg shadow-md max-w-lg">
+                    <div class="space-y-4">
+                        <div class="flex items-end gap-4">
+                            <!-- Selector de Año -->
+                            <div class="flex-1">
+                                <label for="report-year" class="block text-sm font-medium text-gray-700">Año</label>
+                                <select id="report-year" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 bg-white">
+                                    <!-- Se llena con JS -->
+                                </select>
                             </div>
-                            <div><label for="stockPurchaseType" class="block text-sm font-medium text-gray-700 mb-1">Tipo de Alimento</label><input type="text" id="stockPurchaseType" class="form-input" placeholder="Ej: Postura, Iniciador" required></div>
-                            <div class="text-right"><button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-5 rounded-lg shadow-lg transition duration-300">Añadir Insumo</button></div>
-                        </form>
-                    </div>
-                    <div class="space-y-8">
-                        <div class="bg-white p-6 rounded-xl shadow-lg">
-                            <h3 class="text-xl font-bold text-gray-800 mb-4">Compras Recientes</h3>
-                            <div id="recent-purchases-list" class="space-y-4 h-[400px] overflow-y-auto">
-                                <p id="no-purchases-message" class="text-gray-500">No hay compras registradas.</p>
+                            
+                            <!-- NUEVO: Selector de Periodo -->
+                            <div class="flex-1">
+                                <label for="report-period" class="block text-sm font-medium text-gray-700">Periodo</label>
+                                <select id="report-period" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 bg-white">
+                                    <option value="monthly">Mensual</option>
+                                    <option value="annual">Anual</option>
+                                </select>
+                            </div>
+                            
+                            <!-- Selector de Mes (se oculta si es anual) -->
+                            <div id="report-month-container" class="flex-1">
+                                <label for="report-month" class="block text-sm font-medium text-gray-700">Mes</label>
+                                <select id="report-month" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 bg-white">
+                                    <option value="0">Enero</option>
+                                    <option value="1">Febrero</option>
+                                    <option value="2">Marzo</option>
+                                    <option value="3">Abril</option>
+                                    <option value="4">Mayo</option>
+                                    <option value="5">Junio</option>
+                                    <option value="6">Julio</option>
+                                    <option value="7">Agosto</option>
+                                    <option value="8">Septiembre</option>
+                                    <option value="9">Octubre</option>
+                                    <option value="10">Noviembre</option>
+                                    <option value="11">Diciembre</option>
+                                </select>
                             </div>
                         </div>
-                    </div>
-                </div>
-            </section>
-            
-            <!-- SECCIÓN 6: REPORTES -->
-            <section id="reports-section" class="app-section hidden">
-                <div class="bg-white p-6 rounded-xl shadow-lg">
-                    <h2 class="text-2xl font-bold text-gray-800 mb-6">Generador de Reportes (CSV)</h2>
-                    <p class="text-gray-600 mb-6">Selecciona el periodo para generar un reporte unificado (formato CSV, compatible con Excel).</p>
-                    <div class="flex items-end space-x-4 mb-8">
-                        <div>
-                            <label for="reportPeriod" class="block text-sm font-medium text-gray-700 mb-1">Periodo</label>
-                            <select id="reportPeriod" class="form-select">
-                                <option value="monthly">Mensual</option>
-                                <option value="annual">Anual</option>
-                            </select>
-                        </div>
-                        <div id="reportMonthContainer">
-                            <label for="reportMonth" class="block text-sm font-medium text-gray-700 mb-1">Mes</label>
-                            <select id="reportMonth" class="form-select">
-                                <option value="01">Enero</option><option value="02">Febrero</option><option value="03">Marzo</option><option value="04">Abril</option><option value="05">Mayo</option><option value="06">Junio</option><option value="07">Julio</option><option value="08">Agosto</option><option value="09">Septiembre</option><option value="10">Octubre</option><option value="11">Noviembre</option><option value="12">Diciembre</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label for="reportYear" class="block text-sm font-medium text-gray-700 mb-1">Año</label>
-                            <input type="number" id="reportYear" class="form-input" value="2025" placeholder="YYYY">
-                        </div>
-                    </div>
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <button id="btn-export-unified" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-5 rounded-lg shadow-lg flex items-center justify-center transition duration-300 md:col-span-1">
-                            <i data-feather="file-text" class="w-5 h-5 mr-2"></i> Descargar Reporte Unificado
+                        
+                        <!-- NUEVO: Botón Unificado -->
+                        <button id="download-unified-report" class="w-full bg-indigo-600 text-white px-4 py-2 rounded-md font-semibold hover:bg-indigo-700 transition flex items-center justify-center gap-2">
+                            <i data-feather="download"></i> Descargar Reporte Unificado (.csv)
                         </button>
                     </div>
                 </div>
-            </section>
-
-            <!-- SECCIÓN 7: CONFIGURACIÓN -->
-            <section id="settings-section" class="app-section hidden">
-                <h2 class="text-2xl font-bold text-gray-800 mb-6">Configuración</h2>
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                    <div class="bg-white p-6 rounded-xl shadow-lg">
-                        <h3 class="text-xl font-bold text-gray-800 mb-4">Gestionar Docentes</h3>
-                        <form id="teacher-form" class="flex space-x-2 mb-4">
-                            <input type="text" id="newTeacherName" class="form-input" placeholder="Nombre del docente" required>
-                            <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-bold p-3 rounded-lg shadow-lg"><i data-feather="plus" class="w-5 h-5"></i></button>
+            </div>
+            
+            <!-- SECCIÓN: Configuración -->
+            <div id="config-content" class="tab-content" style="display: none;">
+                <h2 class="text-3xl font-bold mb-6">Configuración</h2>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <!-- Gestionar Docentes -->
+                    <div class="config-card">
+                        <h3>Gestionar Docentes</h3>
+                        <form id="config-teacher-form" class="flex gap-2 mb-4">
+                            <input type="text" id="config-teacher-name" placeholder="Nombre del docente" required class="flex-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                            <button type="submit" class="bg-indigo-600 text-white px-3 py-2 rounded-md hover:bg-indigo-700 transition">
+                                <i data-feather="plus"></i>
+                            </button>
                         </form>
-                        <div id="teacher-list" class="space-y-2 h-48 overflow-y-auto"></div>
+                        <div id="config-teacher-list" class="config-list">
+                            <!-- Lista de docentes -->
+                        </div>
                     </div>
-                    <div class="bg-white p-6 rounded-xl shadow-lg">
-                        <h3 class="text-xl font-bold text-gray-800 mb-4">Gestionar Clientes</h3>
-                        <form id="client-form" class="flex space-x-2 mb-4">
-                            <input type="text" id="newClientName" class="form-input" placeholder="Nombre del cliente" required>
-                            <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-bold p-3 rounded-lg shadow-lg"><i data-feather="plus" class="w-5 h-5"></i></button>
+                    
+                    <!-- Gestionar Clientes -->
+                    <div class="config-card">
+                        <h3>Gestionar Clientes</h3>
+                        <form id="config-client-form" class="flex gap-2 mb-4">
+                            <input type="text" id="config-client-name" placeholder="Nombre del cliente" required class="flex-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                            <button type="submit" class="bg-indigo-600 text-white px-3 py-2 rounded-md hover:bg-indigo-700 transition">
+                                <i data-feather="plus"></i>
+                            </button>
                         </form>
-                        <div id="client-list" class="space-y-2 h-48 overflow-y-auto"></div>
+                        <div id="config-client-list" class="config-list">
+                            <!-- Lista de clientes -->
+                        </div>
                     </div>
-                    <div class="bg-white p-6 rounded-xl shadow-lg">
-                        <h3 class="text-xl font-bold text-gray-800 mb-4">Gestionar Actividades</h3>
-                        <form id="activity-form" class="flex space-x-2 mb-4">
-                            <input type="text" id="newActivityName" class="form-input" placeholder="Nombre de actividad" required>
-                            <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-bold p-3 rounded-lg shadow-lg"><i data-feather="plus" class="w-5 h-5"></i></button>
+                    
+                    <!-- NUEVO: Gestionar Actividades -->
+                    <div class="config-card">
+                        <h3>Gestionar Actividades</h3>
+                        <form id="config-activity-form" class="flex gap-2 mb-4">
+                            <input type="text" id="config-activity-name" placeholder="Ej: Limpieza" required class="flex-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                            <button type="submit" class="bg-indigo-600 text-white px-3 py-2 rounded-md hover:bg-indigo-700 transition">
+                                <i data-feather="plus"></i>
+                            </button>
                         </form>
-                        <div id="activity-list" class="space-y-2 h-48 overflow-y-auto"></div>
+                        <div id="config-activity-list" class="config-list">
+                            <!-- Lista de actividades -->
+                        </div>
                     </div>
                 </div>
-                <div class="mt-12 bg-white p-6 rounded-xl shadow-lg border-2 border-red-300">
-                    <h3 class="text-xl font-bold text-red-600 mb-4">Zona de Peligro</h3>
-                    <p class="text-gray-600 mb-4">Esto borrará permanentemente todos los lotes, registros, ventas, compras y configuraciones de la aplicación. Úsalo solo para borrar datos de prueba.</p>
-                    <button id="btn-reset-all-data" class="bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-5 rounded-lg shadow-lg flex items-center transition duration-300">
-                        <i data-feather="alert-triangle" class="w-5 h-5 mr-2"></i> Borrar Todos los Datos
-                    </button>
+                
+                <!-- Zona de Peligro -->
+                <div class="mt-10 pt-6 border-t border-red-300 max-w-lg">
+                    <h3 class="text-xl font-semibold text-red-700 mb-4">Zona de Peligro</h3>
+                    <div class="bg-red-50 p-4 rounded-lg">
+                        <p class="text-sm text-red-800 mb-4">
+                            Esto borrará permanentemente todos los lotes, registros, ventas, insumos y configuraciones de la base de datos.
+                        </p>
+                        <button id="reset-all-data-button" class="w-full bg-red-600 text-white px-4 py-2 rounded-md font-semibold hover:bg-red-700 transition">
+                            Borrar Todos los Datos de Prueba
+                        </button>
+                    </div>
                 </div>
-            </section>
+            </div>
 
         </main>
+    </div>
+    
+    <!-- Pie de página con ID de Usuario -->
+    <footer class="bg-gray-800 text-gray-400 text-xs p-2 text-center fixed bottom-0 w-full">
+        Conectado como: <span id="user-id-display" class="font-mono">Cargando...</span>
+    </footer>
 
-        <!-- Modales (HTML sin cambios) -->
-        <div id="lot-modal" class="modal">
-            <div class="modal-content overflow-hidden">
-                <div class="bg-gray-50 px-6 py-4 border-b border-gray-200 flex justify-between items-center">
-                    <h3 id="modal-title" class="text-xl font-bold text-gray-800">Añadir Nuevo Lote</h3>
-                    <button id="close-modal-btn" class="text-gray-400 hover:text-gray-600"><i data-feather="x" class="w-6 h-6"></i></button>
-                </div>
-                <form id="lot-form" class="p-6 md:p-8 space-y-6">
-                    <input type="hidden" id="lotId" />
-                    <div><label for="lotName" class="block text-sm font-medium text-gray-700 mb-1">Nombre del Lote / Corral</label><input type="text" id="lotName" class="form-input" placeholder="Ej: Corral A-01" required></div>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div><label for="henCount" class="block text-sm font-medium text-gray-700 mb-1">N° de Gallinas</label><input type="number" id="henCount" class="form-input" placeholder="0" required></div>
-                        <div><label for="roosterCount" class="block text-sm font-medium text-gray-700 mb-1">N° de Gallos</label><input type="number" id="roosterCount" class="form-input" placeholder="0" required></div>
+
+    <!-- Modal Genérico (para Lotes) -->
+    <div id="lot-modal" class="modal fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center p-4 opacity-0 pointer-events-none z-50">
+        <div class="modal-content bg-white rounded-lg shadow-xl w-full max-w-md p-6 transform scale-95">
+            <h2 id="modal-title" class="text-2xl font-bold mb-4">Añadir Lote</h2>
+            <form id="lot-form">
+                <input type="hidden" id="lot-id">
+                <div class="space-y-4">
+                    <div>
+                        <label for="lot-name" class="block text-sm font-medium text-gray-700">Nombre del Lote</label>
+                        <input type="text" id="lot-name" placeholder="Ej: Corral A-1" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
                     </div>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div><label for="dateRecorded" class="block text-sm font-medium text-gray-700 mb-1">Fecha de Ingreso / Registro</label><input type="date" id="dateRecorded" class="form-input" required></div>
-                        <div><label for="dailyRationPerHen" class="block text-sm font-medium text-gray-700 mb-1">Ración por Animal (kg)</label><input type="number" step="0.001" id="dailyRationPerHen" class="form-input" placeholder="Ej: 0.115" required></div>
+                    <div>
+                        <label for="lot-hens" class="block text-sm font-medium text-gray-700">Cantidad de Gallinas</label>
+                        <input type="number" id="lot-hens" placeholder="Ej: 100" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
                     </div>
-                    <div><label for="lotNotes" class="block text-sm font-medium text-gray-700 mb-1">Notas (Raza, Edad, etc.)</label><textarea id="lotNotes" rows="3" class="form-input" placeholder="Información adicional del lote..."></textarea></div>
-                    <div class="pt-4 flex justify-end space-x-3">
-                        <button type="button" id="cancel-modal-btn" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-3 px-5 rounded-lg transition duration-300">Cancelar</button>
-                        <button type="submit" class="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-5 rounded-lg shadow-lg transition duration-300">Guardar Lote</button>
+                    <div>
+                        <label for="lot-roosters" class="block text-sm font-medium text-gray-700">Cantidad de Gallos</label>
+                        <input type="number" id="lot-roosters" placeholder="Ej: 10" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
                     </div>
-                </form>
-            </div>
-        </div>
-        
-        <div id="confirm-delete-modal" class="confirm-modal">
-            <div class="confirm-modal-content">
-                <h3 id="confirm-title" class="text-xl font-bold text-gray-900 mb-4">Confirmar Eliminación</h3>
-                <p id="confirm-message" class="text-gray-600 mb-8">¿Estás seguro? Esta acción no se puede deshacer.</p>
-                <div class="flex justify-end space-x-3">
-                    <button id="cancel-delete-btn" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-3 px-5 rounded-lg transition duration-300">Cancelar</button>
-                    <button id="confirm-delete-btn" class="bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-5 rounded-lg shadow-lg transition duration-300">Eliminar</button>
+                    <div>
+                        <!-- MODIFICADO: Ración por animal -->
+                        <label for="lot-ration" class="block text-sm font-medium text-gray-700">Ración por Animal (kg)</label>
+                        <input type="number" step="0.001" id="lot-ration" placeholder="Ej: 0.120" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                    </div>
+                    <div>
+                        <label for="lot-age" class="block text-sm font-medium text-gray-700">Edad (semanas)</label>
+                        <input type="number" id="lot-age" placeholder="Ej: 25" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                    </div>
+                    <div>
+                        <label for="lot-date" class="block text-sm font-medium text-gray-700">Fecha de Ingreso</label>
+                        <input type="date" id="lot-date" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                    </div>
                 </div>
-            </div>
-        </div>
-        
-        <div id="confirm-reset-modal" class="confirm-modal">
-            <div class="confirm-modal-content">
-                <h3 class="text-xl font-bold text-red-700 mb-4">¡ACCIÓN IRREVERSIBLE!</h3>
-                <p class="text-gray-600 mb-4">¿Estás absolutamente seguro de que deseas borrar TODOS los datos de la aplicación?</p>
-                <p class="text-gray-600 mb-8">Todos los lotes, registros, ventas e insumos se perderán.</p>
-                <div class="flex justify-end space-x-3">
-                    <button id="cancel-reset-btn" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-3 px-5 rounded-lg transition duration-300">Cancelar</button>
-                    <button id="confirm-reset-btn" class="bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-5 rounded-lg shadow-lg transition duration-300">SÍ, BORRAR TODO</button>
+                <div class="mt-6 flex justify-end gap-3">
+                    <button type="button" id="cancel-lot-button" class="bg-white text-gray-700 px-4 py-2 rounded-md border border-gray-300 hover:bg-gray-50">Cancelar</button>
+                    <button type="submit" class="bg-indigo-600 text-white px-4 py-2 rounded-md font-semibold hover:bg-indigo-700">Guardar</button>
                 </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Modal de Confirmación de Borrado -->
+    <div id="confirm-modal" class="modal fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center p-4 opacity-0 pointer-events-none z-50">
+        <div class="modal-content bg-white rounded-lg shadow-xl w-full max-w-sm p-6 transform scale-95">
+            <h2 id="confirm-modal-title" class="text-xl font-bold mb-4">¿Estás seguro?</h2>
+            <p id="confirm-modal-text" class="text-gray-700 mb-6">Esta acción no se puede deshacer.</p>
+            <div class="flex justify-end gap-3">
+                <button type="button" id="confirm-cancel-button" class="bg-white text-gray-700 px-4 py-2 rounded-md border border-gray-300 hover:bg-gray-50">Cancelar</button>
+                <button type="button" id="confirm-delete-button" class="bg-red-600 text-white px-4 py-2 rounded-md font-semibold hover:bg-red-700">Confirmar Borrado</button>
             </div>
         </div>
-
-        <!-- Notificación Toast -->
-        <div id="toast-notification" class="toast">
-            <span id="toast-message"></span>
-        </div>
-
-        <!-- Pie de Página -->
-        <footer class="bg-white border-t border-gray-200 mt-12">
-            <div class="container mx-auto px-6 py-4 text-center text-gray-500 text-sm">
-                <!-- Pie de página actualizado -->
-                <p>&copy; 2025 App de Gestión Avícola. Datos en la nube.</p>
-                <!-- Mostrará el ID de usuario una vez autenticado -->
-                <p id="user-id-display" class="text-xs text-gray-400 mt-1"></p>
-            </div>
-        </footer>
-
-    </div> <!-- Fin Contenedor Principal -->
+    </div>
+    
+    <!-- Toast de Notificación -->
+    <div id="toast" class="fixed bottom-10 right-10 bg-gray-900 text-white px-5 py-3 rounded-lg shadow-xl opacity-0 translate-y-10 transition-all duration-300">
+        <span id="toast-message"></span>
+    </div>
 
 
     <!-- Scripts de la Aplicación (Firebase) -->
@@ -441,7 +526,7 @@
         
         // --- 0. IMPORTACIONES DE FIREBASE ---
         // Importar funciones necesarias
-        // ACTUALIZADO: Versiones de SDK a 9.23.0 (para coincidir)
+        // ACTUALIZADO: Versiones de SDK a 9.23.0
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
         import { 
             getAuth, 
@@ -467,933 +552,1193 @@
 
         
         // --- 1. CONFIGURACIÓN DE FIREBASE ---
-        
-        // ¡¡¡IMPORTANTE!!!
-        // Configuración de Firebase del usuario.
+        // Esta es la configuración que nos pasaste.
+        // La he limpiado para usar solo lo necesario para Firestore y Auth.
         const firebaseConfig = {
           apiKey: "AIzaSyDMjancMAkR86g1wz2RtIupUjiZkiGRQjE",
           authDomain: "gestion-avicola-7b57b.firebaseapp.com",
           projectId: "gestion-avicola-7b57b",
-          // CORRECCIÓN: El storageBucket debe terminar en .appspot.com
-          storageBucket: "gestion-avicola-7b57b.appspot.com",
+          // CORREGIDO: "appspot.com" es la URL correcta para el storage bucket
+          storageBucket: "gestion-avicola-7b57b.appspot.com", 
           messagingSenderId: "596600543351",
           appId: "1:596600543351:web:4bc1af8bc6e4ad5806ce72"
-          // measurementId: "G-7BZN1JTVKM" // Eliminado: No se usa Analytics y puede causar errores.
+          // measurementId (Analytics) fue removido ya que no se usa y puede dar errores.
         };
 
-        // Variables globales de Firebase y Auth
-        let app, db, auth, userId;
-        // Referencias a colecciones (se definirán después de tener el userId)
-        let lotsCollection, recordsCollection, purchasesCollection, salesCollection;
-        let teachersCollection, clientsCollection, activitiesCollection;
-        let stockDocRef;
+        
+        // --- 2. INICIALIZACIÓN DE SERVICIOS ---
+        
+        // Variables globales de la App
+        let app, auth, db;
+        let userId = null; // ID del usuario anónimo
+        
+        // Almacenes locales de datos (caché)
+        let allHenLots = [];
+        let allDailyRecords = [];
+        let allPurchases = [];
+        let allSales = [];
+        let allTeachers = [];
+        let allClients = [];
+        let allActivities = [];
 
-        // --- 2. CACHÉ DE DATOS LOCAL ---
-        // (Ahora se llenan con onSnapshot)
-        let localLotsCache = [];
-        let localRecordsCache = [];
-        let localPurchasesCache = [];
-        let localSalesCache = [];
-        let localTeachersCache = [];
-        let localClientsCache = [];
-        let localActivitiesCache = [];
+        // Gráficos
+        let eggChart = null;
+        let salesChart = null;
         
-        let globalCurrentStockKg = 0;
+        // Referencias a elementos del DOM
+        const tabs = document.querySelectorAll('.nav-link');
+        const tabContents = document.querySelectorAll('.tab-content');
+        const userIdDisplay = document.getElementById('user-id-display');
         
-        // --- 3. CONSTANTES Y ESTADO GLOBAL (UI) ---
-        let itemToDelete = { id: null, type: null, path: null };
-        let productionLineChart = null;
-        let salesPieChart = null;
-        
-        // --- 4. SELECTORES DEL DOM (Sin cambios) ---
-        const navButtons = document.querySelectorAll('.nav-tab');
-        const sections = document.querySelectorAll('.app-section');
-        const modal = document.getElementById('lot-modal');
-        const modalTitle = document.getElementById('modal-title');
-        const addLotBtn = document.getElementById('add-lot-btn');
-        const closeModalBtn = document.getElementById('close-modal-btn');
-        const cancelModalBtn = document.getElementById('cancel-modal-btn');
+        // Modal de Lotes
+        const addLotButton = document.getElementById('add-lot-button');
+        const lotModal = document.getElementById('lot-modal');
+        const cancelLotButton = document.getElementById('cancel-lot-button');
         const lotForm = document.getElementById('lot-form');
-        const lotDisplayArea = document.getElementById('lot-display-area');
-        const noLotsMessage = document.getElementById('no-lots-message');
-        const confirmDeleteModal = document.getElementById('confirm-delete-modal');
-        const confirmTitle = document.getElementById('confirm-title');
-        const confirmMessage = document.getElementById('confirm-message');
-        const cancelDeleteBtn = document.getElementById('cancel-delete-btn');
-        const confirmDeleteBtn = document.getElementById('confirm-delete-btn');
-        const confirmResetModal = document.getElementById('confirm-reset-modal');
-        const cancelResetBtn = document.getElementById('cancel-reset-btn');
-        const confirmResetBtn = document.getElementById('confirm-reset-btn');
-        const btnResetAllData = document.getElementById('btn-reset-all-data');
-        const dailyRecordForm = document.getElementById('daily-record-form');
-        const recentRecordsList = document.getElementById('recent-records-list');
-        const noRecordsMessage = document.getElementById('no-records-message');
-        const recordResponsibleSelect = document.getElementById('recordResponsible');
-        const recordActivitiesCheckboxes = document.getElementById('record-activities-checkboxes');
-        const recordObservationsTextarea = document.getElementById('recordObservations');
-        const stockPurchaseForm = document.getElementById('stock-purchase-form');
-        const recentPurchasesList = document.getElementById('recent-purchases-list');
-        const noPurchasesMessage = document.getElementById('no-purchases-message');
-        const salesForm = document.getElementById('sales-form');
-        const recentSalesList = document.getElementById('recent-sales-list');
-        const noSalesMessage = document.getElementById('no-sales-message');
-        const statSalesToday = document.getElementById('stat-sales-today');
-        const saleClientSelect = document.getElementById('saleClient');
-        const statTotalHens = document.getElementById('stat-total-hens');
-        const statFeedStock = document.getElementById('stat-feed-stock');
-        const statEggsToday = document.getElementById('stat-eggs-today');
-        const statDaysRemaining = document.getElementById('stat-days-remaining');
-        const statBalanceMonth = document.getElementById('stat-balance-month');
-        const statEggStock = document.getElementById('stat-egg-stock');
-        const productionChartCtx = document.getElementById('productionChart').getContext('2d');
-        const salesChartCtx = document.getElementById('salesChart').getContext('2d');
-        const reportPeriodSelect = document.getElementById('reportPeriod');
-        const reportMonthContainer = document.getElementById('reportMonthContainer');
-        const reportMonthSelect = document.getElementById('reportMonth');
-        const reportYearInput = document.getElementById('reportYear');
-        const btnExportUnified = document.getElementById('btn-export-unified');
-        const teacherForm = document.getElementById('teacher-form');
-        const newTeacherNameInput = document.getElementById('newTeacherName');
-        const teacherList = document.getElementById('teacher-list');
-        const clientForm = document.getElementById('client-form');
-        const newClientNameInput = document.getElementById('newClientName');
-        const clientList = document.getElementById('client-list');
-        const activityForm = document.getElementById('activity-form');
-        const newActivityNameInput = document.getElementById('newActivityName');
-        const activityList = document.getElementById('activity-list');
-        const toast = document.getElementById('toast-notification');
+        const modalTitle = document.getElementById('modal-title');
+        const lotIdInput = document.getElementById('lot-id');
+        
+        // Modal de Confirmación
+        const confirmModal = document.getElementById('confirm-modal');
+        const confirmModalTitle = document.getElementById('confirm-modal-title');
+        const confirmModalText = document.getElementById('confirm-modal-text');
+        const confirmCancelButton = document.getElementById('confirm-cancel-button');
+        const confirmDeleteButton = document.getElementById('confirm-delete-button');
+        let deleteConfirmCallback = null; // Función a ejecutar al confirmar
+
+        // Toast de Notificación
+        const toast = document.getElementById('toast');
         const toastMessage = document.getElementById('toast-message');
-        const userIdDisplay = document.getElementById('user-id-display'); // Para el pie de página
-        
-        
-        // --- 5. FUNCIONES DE UI (Modales, Navegación, Toast) ---
-        // (Sin cambios significativos en la lógica)
 
-        const showSection = (sectionId) => {
-            sections.forEach(section => section.classList.add('hidden'));
-            navButtons.forEach(btn => btn.classList.remove('active'));
-            document.getElementById(sectionId).classList.remove('hidden');
-            document.querySelector(`.nav-tab[data-section="${sectionId}"]`).classList.add('active');
-        };
+        // Formularios
+        const dailyRecordForm = document.getElementById('daily-record-form');
+        const buyFoodForm = document.getElementById('buy-food-form');
+        const salesForm = document.getElementById('sales-form');
+        
+        // Configuración
+        const configTeacherForm = document.getElementById('config-teacher-form');
+        const configClientForm = document.getElementById('config-client-form');
+        const configActivityForm = document.getElementById('config-activity-form');
+        const resetAllDataButton = document.getElementById('reset-all-data-button');
+        
+        // Reportes
+        const reportYearSelect = document.getElementById('report-year');
+        const reportMonthSelect = document.getElementById('report-month');
+        const reportPeriodSelect = document.getElementById('report-period');
+        const reportMonthContainer = document.getElementById('report-month-container');
+        const downloadUnifiedReportButton = document.getElementById('download-unified-report');
 
-        const openModal = (lotId = null) => {
-            lotForm.reset();
-            if (lotId) {
-                modalTitle.textContent = 'Editar Lote';
-                const lot = localLotsCache.find(l => l.id === lotId);
-                if (lot) {
-                    document.getElementById('lotId').value = lotId;
-                    document.getElementById('lotName').value = lot.name;
-                    document.getElementById('henCount').value = lot.henCount;
-                    document.getElementById('roosterCount').value = lot.roosterCount;
-                    document.getElementById('dateRecorded').value = lot.dateRecorded;
-                    document.getElementById('dailyRationPerHen').value = lot.dailyRationPerHen;
-                    document.getElementById('lotNotes').value = lot.notes;
-                }
-            } else {
-                modalTitle.textContent = 'Añadir Nuevo Lote';
-                document.getElementById('dateRecorded').value = new Date().toISOString().split('T')[0];
+        
+        // --- 3. FUNCIONES DE INICIALIZACIÓN ---
+
+        // Función principal que se ejecuta al cargar la página
+        async function initializeAppAndAuth() {
+            try {
+                // Inicializar Firebase
+                app = initializeApp(firebaseConfig);
+                auth = getAuth(app);
+                db = getFirestore(app);
+                
+                // Escuchar cambios de autenticación
+                onAuthStateChanged(auth, async (user) => {
+                    if (user) {
+                        // El usuario ya está logueado
+                        userId = user.uid;
+                        userIdDisplay.textContent = userId;
+                        // Iniciar la carga de datos
+                        setupAllListeners();
+                    } else {
+                        // No hay usuario, intentar login anónimo
+                        await signInAnonymously(auth);
+                    }
+                });
+
+            } catch (error) {
+                console.error("Error crítico al inicializar Firebase:", error);
+                showToast("Error crítico al conectar. Verifique la config.", "error");
             }
-            modal.classList.add('modal-open');
-        };
-
-        const closeModal = () => {
-            modal.classList.remove('modal-open');
-        };
-
-        const openConfirmDeleteModal = (id, type, message, path) => {
-            itemToDelete = { id, type, path }; // path es la colección
-            confirmTitle.textContent = 'Confirmar Eliminación';
-            confirmMessage.textContent = message || '¿Estás seguro? Esta acción no se puede deshacer.';
-            confirmDeleteModal.classList.add('confirm-modal-open');
-        };
-        
-        const closeConfirmDeleteModal = () => {
-            itemToDelete = { id: null, type: null, path: null };
-            confirmDeleteModal.classList.remove('confirm-modal-open');
-        };
-        
-        const openConfirmResetModal = () => {
-            confirmResetModal.classList.add('confirm-modal-open');
-        };
-        const closeConfirmResetModal = () => {
-            confirmResetModal.classList.remove('confirm-modal-open');
-        };
-        
-        const showToast = (message, isError = false) => {
-            toastMessage.textContent = message;
-            toast.classList.toggle('error', isError);
-            toast.classList.add('show');
-            setTimeout(() => toast.classList.remove('show'), 3000);
-        };
-
-
-        // --- 6. FUNCIONES DE CÁLCULO Y RENDERIZADO ---
-        
-        /**
-         * Calcula TODOS los stats del Dashboard. Se llama después de que CUALQUIER
-         * listener de onSnapshot actualice los datos.
-         */
-        const calculateDashboardStats = () => {
-            const todayStr = new Date().toISOString().split('T')[0];
-            const currentMonth = new Date().toISOString().substring(0, 7);
-
-            // 1. Total Animales y Ración
-            let totalHens = 0;
-            let totalRation = 0;
-            localLotsCache.forEach(lot => {
-                const totalAnimalsInLot = (lot.henCount || 0) + (lot.roosterCount || 0);
-                totalHens += totalAnimalsInLot;
-                totalRation += totalAnimalsInLot * (lot.dailyRationPerHen || 0);
-            });
-            statTotalHens.textContent = totalHens;
-
-            // 2. Stock de Alimento (ya viene de `globalCurrentStockKg`)
-            statFeedStock.textContent = globalCurrentStockKg.toFixed(1);
-
-            // 3. Días Restantes
-            if (totalRation > 0 && globalCurrentStockKg > 0) {
-                statDaysRemaining.textContent = (globalCurrentStockKg / totalRation).toFixed(1);
-            } else {
-                statDaysRemaining.textContent = '0';
+            
+            setupUIListeners();
+            feather.replace(); // Activar iconos
+            setInitialTab('dashboard');
+            
+            // Inicializar selectores de reportes
+            const currentYear = new Date().getFullYear();
+            for (let i = currentYear; i >= currentYear - 5; i--) {
+                reportYearSelect.innerHTML += `<option value="${i}">${i}</option>`;
             }
+            reportMonthSelect.value = new Date().getMonth().toString();
+        }
 
-            // 4. Huevos Cosechados (Hoy) y Stock de Huevos (Total)
-            let eggsSumToday = 0;
-            let totalHarvested = 0;
-            localRecordsCache.forEach(r => {
-                if (r.date === todayStr) eggsSumToday += (r.eggsHarvested || 0);
-                totalHarvested += (r.eggsHarvested || 0);
-            });
-            statEggsToday.textContent = eggsSumToday;
-
-            // 5. Ventas (Hoy) y Stock de Huevos (Resta)
-            let salesSumToday = 0;
-            let totalSoldEggs = 0;
-            let totalIncomeMonth = 0;
-            localSalesCache.forEach(s => {
-                if (s.date === todayStr) salesSumToday += (s.price || 0);
-                if (s.date.startsWith(currentMonth)) totalIncomeMonth += (s.price || 0);
-                totalSoldEggs += (s.eggs || 0);
-            });
-            statSalesToday.textContent = salesSumToday.toFixed(2);
-            
-            // 6. Stock de Huevos (Cosechados - Vendidos)
-            statEggStock.textContent = totalHarvested - totalSoldEggs;
-
-            // 7. Balance Mensual
-            let totalExpensesMonth = 0;
-            localPurchasesCache.forEach(p => {
-                if (p.date.startsWith(currentMonth)) totalExpensesMonth += (p.price || 0);
-            });
-            
-            const monthlyBalance = totalIncomeMonth - totalExpensesMonth;
-            const balanceColorClass = monthlyBalance >= 0 ? 'text-green-600' : 'text-red-600';
-            statBalanceMonth.textContent = monthlyBalance.toFixed(2);
-            statBalanceMonth.className = `text-3xl font-bold ${balanceColorClass}`;
-        };
-        
-        // --- Funciones de Renderizado de Listas (Actualizadas para Firebase) ---
-
-        const renderLotCard = (lot) => {
-            const card = document.createElement('div');
-            card.className = 'bg-white rounded-xl shadow-lg overflow-hidden flex flex-col';
-            card.innerHTML = `
-                <div class="p-6">
-                    <h3 class="text-xl font-bold text-gray-900 mb-3">${lot.name}</h3>
-                    <div class="grid grid-cols-2 gap-4 text-sm mb-4">
-                        <div><p class="text-gray-500">Gallinas</p><p class="font-semibold text-lg">${lot.henCount}</p></div>
-                        <div><p class="text-gray-500">Gallos</p><p class="font-semibold text-lg">${lot.roosterCount}</p></div>
-                        <div><p class="text-gray-500">Fecha Ingreso</p><p class="font-semibold">${lot.dateRecorded}</p></div>
-                        <div><p class="text-gray-500">Ración/Animal</p><p class="font-semibold">${lot.dailyRationPerHen} kg</p></div>
-                    </div>
-                    <p class="text-sm text-gray-600 italic">${lot.notes || 'Sin notas.'}</p>
-                </div>
-                <div class="bg-gray-50 px-6 py-3 mt-auto flex justify-end space-x-3">
-                    <button data-id="${lot.id}" data-action="edit" class="text-sm font-medium text-blue-600 hover:text-blue-800">Editar</button>
-                    <!-- Actualizado: data-path es el nombre de la colección -->
-                    <button data-id="${lot.id}" data-action="delete" data-path="lots" class="text-sm font-medium text-red-600 hover:text-red-800">Eliminar</button>
-                </div>
-            `;
-            lotDisplayArea.appendChild(card);
-        };
-
-        const renderRecordList = (record) => {
-            const el = document.createElement('div');
-            el.className = 'p-3 bg-gray-50 rounded-lg border border-gray-200 flex justify-between items-start';
-            const activitiesString = (record.activities && record.activities.length > 0) 
-                ? `<p class="text-sm text-gray-700 font-medium">Actividades: ${record.activities.join(', ')}</p>` 
-                : '';
-            const observationsString = record.observations 
-                ? `<p class="text-sm text-gray-500 italic mt-1">${record.observations}</p>` 
-                : '';
-            el.innerHTML = `
-                <div class="pr-2">
-                    <p class="font-medium text-gray-800">${record.date}: ${record.eggsHarvested} huevos, ${record.feedSupplied} kg</p>
-                    <p class="text-sm text-gray-600">Resp: ${record.responsible}</p>
-                    ${activitiesString}
-                    ${observationsString}
-                </div>
-                <button data-id="${record.id}" data-type="record" data-action="delete" data-path="records" class="delete-btn p-2 flex-shrink-0">
-                    <i data-feather="trash-2" class="w-4 h-4 pointer-events-none"></i>
-                </button>
-            `;
-            return el;
-        };
-
-        const renderPurchaseList = (purchase) => {
-            const el = document.createElement('div');
-            el.className = 'p-3 bg-gray-50 rounded-lg border border-gray-200 flex justify-between items-center';
-            el.innerHTML = `
-                <div>
-                    <p class="font-medium text-gray-800">${purchase.date}: ${purchase.kg} kg por $${purchase.price.toFixed(2)}</p>
-                    <p class="text-sm text-gray-600">Tipo: ${purchase.type || 'No especificado'}</p>
-                </div>
-                <button data-id="${purchase.id}" data-type="purchase" data-action="delete" data-path="purchases" class="delete-btn p-2">
-                    <i data-feather="trash-2" class="w-4 h-4 pointer-events-none"></i>
-                </button>
-            `;
-            return el;
-        };
-
-        const renderSaleList = (sale) => {
-            const el = document.createElement('div');
-            el.className = 'p-3 bg-gray-50 rounded-lg border border-gray-200 flex justify-between items-center';
-            el.innerHTML = `
-                <div>
-                    <p class="font-medium text-gray-800">${sale.date}: ${sale.eggs} huevos a $${sale.price.toFixed(2)}</p>
-                    <p class="text-sm text-gray-600">Cliente: ${sale.client}</p>
-                </div>
-                <button data-id="${sale.id}" data-type="sale" data-action="delete" data-path="sales" class="delete-btn p-2">
-                    <i data-feather="trash-2" class="w-4 h-4 pointer-events-none"></i>
-                </button>
-            `;
-            return el;
-        };
-
-        const renderSettingsList = (item, type) => {
-            const el = document.createElement('div');
-            el.className = 'settings-list-item';
-            el.innerHTML = `
-                <span class="font-medium text-gray-800">${item.name}</span>
-                <button data-id="${item.id}" data-type="${type}" data-action="delete" data-path="${type}s" class="delete-btn p-2">
-                    <i data-feather="x" class="w-4 h-4 pointer-events-none"></i>
-                </button>
-            `;
-            return el;
-        };
-
-        // --- Funciones de Gráficos (Actualizadas para usar caché local) ---
-        
-        const renderProductionChart = () => {
-            if (productionLineChart) productionLineChart.destroy();
-            const groupedData = localRecordsCache.reduce((acc, r) => {
-                const month = r.date.substring(0, 7);
-                acc[month] = (acc[month] || 0) + r.eggsHarvested;
-                return acc;
-            }, {});
-            const sortedLabels = Object.keys(groupedData).sort();
-            const chartData = sortedLabels.map(label => groupedData[label]);
-            productionLineChart = new Chart(productionChartCtx, {
-                type: 'bar',
-                data: { labels: sortedLabels, datasets: [{ label: 'Huevos Cosechados por Mes', data: chartData, borderColor: 'rgb(22, 163, 74)', backgroundColor: 'rgba(22, 163, 74, 0.8)' }] },
-                options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true } } }
-            });
-        };
-        
-        const renderSalesChart = () => {
-            if (salesPieChart) salesPieChart.destroy();
-            const groupedData = localSalesCache.reduce((acc, s) => {
-                const client = s.client || 'Anónimo';
-                acc[client] = (acc[client] || 0) + s.eggs;
-                return acc;
-            }, {});
-            const sortedLabels = Object.keys(groupedData).sort();
-            const chartData = sortedLabels.map(label => groupedData[label]);
-            salesPieChart = new Chart(salesChartCtx, {
-                type: 'doughnut',
-                data: { labels: sortedLabels, datasets: [{ label: 'Total Huevos Comprados', data: chartData, backgroundColor: ['rgb(54, 162, 235)', 'rgb(255, 99, 132)', 'rgb(255, 205, 86)', 'rgb(75, 192, 192)', 'rgb(153, 102, 255)', 'rgb(255, 159, 64)'] }] },
-                options: { responsive: true, maintainAspectRatio: false }
-            });
-        };
-
-
-        // --- 7. LISTENERS DE FIREBASE (onSnapshot) ---
-
-        /**
-         * Inicializa todos los listeners de onSnapshot.
-         */
-        const initializeFirestoreListeners = () => {
+        // Configura todos los listeners de la base de datos
+        function setupAllListeners() {
             if (!userId) return;
 
-            // Definir todas las referencias de colecciones/documentos
-            const userDocRef = doc(db, 'users', userId);
-            lotsCollection = collection(userDocRef, 'lots');
-            recordsCollection = collection(userDocRef, 'records');
-            purchasesCollection = collection(userDocRef, 'purchases');
-            salesCollection = collection(userDocRef, 'sales');
-            teachersCollection = collection(userDocRef, 'teachers');
-            clientsCollection = collection(userDocRef, 'clients');
-            activitiesCollection = collection(userDocRef, 'activities');
-            stockDocRef = doc(userDocRef, 'inventory', 'stock'); // Documento único para el stock
-
-            // --- Listeners ---
-
-            // Listener de Lotes
-            onSnapshot(query(lotsCollection), (snapshot) => {
-                localLotsCache = [];
-                lotDisplayArea.innerHTML = '';
-                snapshot.forEach(doc => localLotsCache.push({ ...doc.data(), id: doc.id }));
-                
-                if (localLotsCache.length === 0) noLotsMessage.classList.remove('hidden');
-                else noLotsMessage.classList.add('hidden');
-                
-                localLotsCache.forEach(renderLotCard);
-                calculateDashboardStats();
-                feather.replace();
-            });
-
-            // Listener de Registros Diarios
-            onSnapshot(query(recordsCollection), (snapshot) => {
-                localRecordsCache = [];
-                recentRecordsList.innerHTML = '';
-                snapshot.forEach(doc => localRecordsCache.push({ ...doc.data(), id: doc.id }));
-                
-                if (localRecordsCache.length === 0) noRecordsMessage.classList.remove('hidden');
-                else noRecordsMessage.classList.add('hidden');
-                
-                // Ordenar por fecha de creación para mostrar los más nuevos primero
-                localRecordsCache.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
-                localRecordsCache.forEach(record => recentRecordsList.appendChild(renderRecordList(record)));
-                
-                calculateDashboardStats();
-                renderProductionChart();
-                feather.replace();
-            });
-
-            // Listener de Compras
-            onSnapshot(query(purchasesCollection), (snapshot) => {
-                localPurchasesCache = [];
-                recentPurchasesList.innerHTML = '';
-                snapshot.forEach(doc => localPurchasesCache.push({ ...doc.data(), id: doc.id }));
-                
-                if (localPurchasesCache.length === 0) noPurchasesMessage.classList.remove('hidden');
-                else noPurchasesMessage.classList.add('hidden');
-                
-                localPurchasesCache.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
-                localPurchasesCache.forEach(purchase => recentPurchasesList.appendChild(renderPurchaseList(purchase)));
-                
-                calculateDashboardStats();
-                feather.replace();
-            });
-
-            // Listener de Ventas
-            onSnapshot(query(salesCollection), (snapshot) => {
-                localSalesCache = [];
-                recentSalesList.innerHTML = '';
-                snapshot.forEach(doc => localSalesCache.push({ ...doc.data(), id: doc.id }));
-                
-                if (localSalesCache.length === 0) noSalesMessage.classList.remove('hidden');
-                else noSalesMessage.classList.add('hidden');
-                
-                localSalesCache.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
-                localSalesCache.forEach(sale => recentSalesList.appendChild(renderSaleList(sale)));
-
-                calculateDashboardStats();
-                renderSalesChart();
-                feather.replace();
-            });
-
-            // Listener de Stock (Documento único)
-            onSnapshot(stockDocRef, (docSnap) => {
-                if (docSnap.exists()) {
-                    globalCurrentStockKg = docSnap.data().kg || 0;
-                } else {
-                    globalCurrentStockKg = 0;
-                    // Opcional: Crear el documento si no existe
-                    setDoc(stockDocRef, { kg: 0 });
-                }
-                calculateDashboardStats();
-            });
-            
-            // Función auxiliar para rellenar desplegables
-            const populateDropdowns = (selectElement, items, placeholder) => {
-                selectElement.innerHTML = `<option value="">-- Seleccionar ${placeholder} --</option>`;
-                items.forEach(item => {
-                    const option = document.createElement('option');
-                    option.value = item.name;
-                    option.textContent = item.name;
-                    selectElement.appendChild(option);
-                });
-            };
-
-            // Función auxiliar para rellenar checkboxes de actividades
-            const populateActivitiesCheckboxes = (activities) => {
-                recordActivitiesCheckboxes.innerHTML = '';
-                if (activities.length === 0) {
-                    recordActivitiesCheckboxes.innerHTML = `<p class="text-gray-500 text-sm italic col-span-full">No hay actividades en Configuración.</p>`;
-                } else {
-                    activities.forEach(activity => {
-                        const label = document.createElement('label');
-                        label.className = 'checkbox-label';
-                        label.innerHTML = `
-                            <input type="checkbox" value="${activity.name}" class="checkbox-input">
-                            <span>${activity.name}</span>
-                        `;
-                        recordActivitiesCheckboxes.appendChild(label);
-                    });
-                }
-            };
-
-            // Listener de Configuración (Docentes, Clientes, Actividades)
-            const createSettingsListener = (collectionRef, listElement, type, cache, dropdownSelect = null, placeholder = '') => {
-                onSnapshot(query(collectionRef), (snapshot) => {
-                    cache.length = 0; // Limpiar caché
-                    listElement.innerHTML = '';
-                    snapshot.forEach(doc => cache.push({ ...doc.data(), id: doc.id }));
-                    
-                    if (cache.length === 0) listElement.innerHTML = `<p class="text-gray-500 italic">No hay ${type}s guardados.</p>`;
-                    cache.sort((a,b) => a.name.localeCompare(b.name)); // Ordenar alfabéticamente
-                    cache.forEach(item => listElement.appendChild(renderSettingsList(item, type)));
-                    
-                    if (dropdownSelect) populateDropdowns(dropdownSelect, cache, placeholder);
-                    if (type === 'activity') populateActivitiesCheckboxes(cache); // Caso especial
-                    
-                    feather.replace();
-                });
+            // Paths de colecciones
+            const collectionsPaths = {
+                'hen_lots': (data) => { allHenLots = data; renderHenLots(); updateDashboard(); },
+                'daily_records': (data) => { allDailyRecords = data; renderDailyRecords(); updateDashboard(); updateCharts(); },
+                'purchases': (data) => { allPurchases = data; renderPurchases(); updateDashboard(); },
+                'sales': (data) => { allSales = data; renderSales(); updateDashboard(); updateCharts(); },
+                'config_teachers': (data) => { allTeachers = data; renderConfigList(data, 'config-teacher-list', deleteConfigItem); updateTeacherDropdowns(); },
+                'config_clients': (data) => { allClients = data; renderConfigList(data, 'config-client-list', deleteConfigItem); updateClientDropdowns(); },
+                'config_activities': (data) => { allActivities = data; renderConfigList(data, 'config-activity-list', deleteConfigItem); updateActivityCheckboxes(); },
             };
             
-            createSettingsListener(teachersCollection, teacherList, 'teacher', localTeachersCache, recordResponsibleSelect, 'Docente');
-            createSettingsListener(clientsCollection, clientList, 'client', localClientsCache, saleClientSelect, 'Cliente');
-            createSettingsListener(activitiesCollection, activityList, 'activity', localActivitiesCache);
-
-        };
+            // Crear un listener por cada colección
+            for (const [path, callback] of Object.entries(collectionsPaths)) {
+                const collectionRef = collection(db, `users/${userId}/${path}`);
+                onSnapshot(collectionRef, (snapshot) => {
+                    const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                    callback(data);
+                }, (error) => {
+                    console.error(`Error escuchando ${path}:`, error);
+                    showToast(`Error cargando ${path}`, "error");
+                });
+            }
+        }
         
-        // --- 8. MANEJADORES DE FORMULARIOS (Escritura en Firebase) ---
+        // Configura los listeners de la UI (botones, formularios, etc.)
+        function setupUIListeners() {
+            // Navegación de Pestañas
+            tabs.forEach(tab => {
+                tab.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const tabName = tab.getAttribute('data-tab');
+                    setInitialTab(tabName);
+                });
+            });
 
-        const handleLotFormSubmit = async (e) => {
+            // Modal de Lotes
+            addLotButton.addEventListener('click', showLotModal);
+            cancelLotButton.addEventListener('click', hideLotModal);
+            lotForm.addEventListener('submit', handleLotFormSubmit);
+            
+            // Modal de Confirmación
+            confirmCancelButton.addEventListener('click', hideConfirmModal);
+            confirmDeleteButton.addEventListener('click', () => {
+                if (deleteConfirmCallback) {
+                    deleteConfirmCallback();
+                }
+                hideConfirmModal();
+            });
+            
+            // Formularios de Registros
+            dailyRecordForm.addEventListener('submit', handleDailyRecordSubmit);
+            buyFoodForm.addEventListener('submit', handleBuyFoodSubmit);
+            
+            // Formulario de Ventas
+            salesForm.addEventListener('submit', handleSalesFormSubmit);
+            
+            // Formularios de Configuración
+            configTeacherForm.addEventListener('submit', handleConfigFormSubmit('config_teachers', 'config-teacher-name'));
+            configClientForm.addEventListener('submit', handleConfigFormSubmit('config_clients', 'config-client-name'));
+            configActivityForm.addEventListener('submit', handleConfigFormSubmit('config_activities', 'config-activity-name'));
+            resetAllDataButton.addEventListener('click', handleResetAllData);
+            
+            // Reportes
+            downloadUnifiedReportButton.addEventListener('click', generateUnifiedReport);
+            reportPeriodSelect.addEventListener('change', () => {
+                reportMonthContainer.style.display = reportPeriodSelect.value === 'annual' ? 'none' : 'block';
+            });
+        }
+
+
+        // --- 4. LÓGICA DE NAVEGACIÓN Y UI ---
+
+        // Muestra una pestaña y oculta las demás
+        function setInitialTab(tabName) {
+            tabContents.forEach(content => {
+                content.style.display = content.id === `${tabName}-content` ? 'block' : 'none';
+            });
+            tabs.forEach(tab => {
+                if (tab.getAttribute('data-tab') === tabName) {
+                    tab.classList.add('nav-link-active');
+                } else {
+                    tab.classList.remove('nav-link-active');
+                }
+            });
+            
+            // Recargar gráficos si se va al dashboard
+            if (tabName === 'dashboard') {
+                updateCharts();
+            }
+        }
+        
+        // Muestra una notificación (toast)
+        function showToast(message, type = 'success') {
+            toastMessage.textContent = message;
+            toast.classList.remove('opacity-0', 'translate-y-10');
+            toast.classList.add(type === 'error' ? 'bg-red-600' : 'bg-gray-900');
+            
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-y-10');
+                if(type === 'error') {
+                    toast.classList.remove('bg-red-600');
+                } else {
+                    toast.classList.remove('bg-gray-900');
+                }
+            }, 3000);
+        }
+
+        // Muestra el modal de lotes (para añadir o editar)
+        function showLotModal(event, lot = null) {
+            if (lot) {
+                // Editar Lote
+                modalTitle.textContent = 'Editar Lote';
+                lotIdInput.value = lot.id;
+                document.getElementById('lot-name').value = lot.name;
+                document.getElementById('lot-hens').value = lot.henCount;
+                document.getElementById('lot-roosters').value = lot.roosterCount;
+                document.getElementById('lot-ration').value = lot.rationPerAnimalKg;
+                document.getElementById('lot-age').value = lot.ageWeeks;
+                // Corregir formato de fecha para input tipo 'date' (YYYY-MM-DD)
+                const dateStr = lot.dateAdded.toDate ? lot.dateAdded.toDate().toISOString().split('T')[0] : lot.dateAdded.split('T')[0];
+                document.getElementById('lot-date').value = dateStr;
+            } else {
+                // Añadir Lote
+                modalTitle.textContent = 'Añadir Lote';
+                lotForm.reset();
+                lotIdInput.value = '';
+            }
+            lotModal.classList.remove('opacity-0', 'pointer-events-none');
+            lotModal.querySelector('.modal-content').classList.remove('scale-95');
+        }
+
+        // Oculta el modal de lotes
+        function hideLotModal() {
+            lotModal.classList.add('opacity-0', 'pointer-events-none');
+            lotModal.querySelector('.modal-content').classList.add('scale-95');
+        }
+        
+        // Muestra el modal de confirmación
+        function showConfirmModal(title, text, onConfirm) {
+            confirmModalTitle.textContent = title;
+            confirmModalText.textContent = text;
+            deleteConfirmCallback = onConfirm; // Asignar la función a ejecutar
+            
+            confirmModal.classList.remove('opacity-0', 'pointer-events-none');
+            confirmModal.querySelector('.modal-content').classList.remove('scale-95');
+        }
+
+        // Oculta el modal de confirmación
+        function hideConfirmModal() {
+            confirmModal.classList.add('opacity-0', 'pointer-events-none');
+            confirmModal.querySelector('.modal-content').classList.add('scale-95');
+            deleteConfirmCallback = null;
+        }
+
+
+        // --- 5. LÓGICA DE DATOS (Firebase) ---
+        
+        // Guardar (añadir o editar) un Lote
+        async function handleLotFormSubmit(e) {
             e.preventDefault();
-            const lotId = document.getElementById('lotId').value;
+            if (!userId) return;
+
+            const id = lotIdInput.value;
             const lotData = {
-                name: document.getElementById('lotName').value,
-                henCount: parseInt(document.getElementById('henCount').value, 10),
-                roosterCount: parseInt(document.getElementById('roosterCount').value, 10),
-                dateRecorded: document.getElementById('dateRecorded').value,
-                dailyRationPerHen: parseFloat(document.getElementById('dailyRationPerHen').value),
-                notes: document.getElementById('lotNotes').value,
+                name: document.getElementById('lot-name').value,
+                henCount: parseInt(document.getElementById('lot-hens').value),
+                roosterCount: parseInt(document.getElementById('lot-roosters').value),
+                rationPerAnimalKg: parseFloat(document.getElementById('lot-ration').value),
+                ageWeeks: parseInt(document.getElementById('lot-age').value),
+                dateAdded: Timestamp.fromDate(new Date(document.getElementById('lot-date').value + 'T00:00:00')) // Asegurar fecha correcta
             };
-            
+
             try {
-                if (lotId) {
-                    await setDoc(doc(lotsCollection, lotId), lotData);
-                    showToast('Lote actualizado con éxito.');
+                let docRef;
+                if (id) {
+                    // Editar
+                    docRef = doc(db, `users/${userId}/hen_lots`, id);
+                    await setDoc(docRef, lotData);
+                    showToast('Lote actualizado exitosamente.');
                 } else {
-                    await addDoc(lotsCollection, lotData);
-                    showToast('Lote añadido con éxito.');
+                    // Añadir
+                    docRef = collection(db, `users/${userId}/hen_lots`);
+                    await addDoc(docRef, lotData);
+                    showToast('Lote guardado exitosamente.');
                 }
-                closeModal();
-                // No es necesario llamar a loadAllData, onSnapshot lo hace.
+                hideLotModal();
+                lotForm.reset();
             } catch (error) {
-                console.error("Error guardando lote: ", error);
-                showToast('Error al guardar el lote.', true);
+                console.error('Error al guardar lote:', error);
+                showToast('Error al guardar lote. Verifique las reglas.', 'error');
             }
-        };
-
-        const handleDailyRecordSubmit = async (e) => {
-            e.preventDefault();
-            const selectedActivities = Array.from(document.querySelectorAll('#record-activities-checkboxes input:checked')).map(cb => cb.value);
-            const recordData = {
-                date: document.getElementById('recordDate').value,
-                eggsHarvested: parseInt(document.getElementById('eggsHarvested').value, 10),
-                feedSupplied: parseFloat(document.getElementById('feedSupplied').value),
-                responsible: recordResponsibleSelect.value,
-                activities: selectedActivities,
-                observations: recordObservationsTextarea.value,
-                createdAt: Timestamp.now()
-            };
-            
-            if (isNaN(recordData.eggsHarvested) || isNaN(recordData.feedSupplied) || !recordData.date || !recordData.responsible) {
-                showToast('Error: Revisa los campos obligatorios.', true);
-                return;
-            }
-            
-            const feedToSubtract = -Math.abs(recordData.feedSupplied);
-
-            try {
-                // Usar una transacción para asegurar consistencia
-                const batch = writeBatch(db);
-                // 1. Añadir el registro
-                batch.set(doc(recordsCollection), recordData);
-                // 2. Actualizar el stock
-                batch.set(stockDocRef, { kg: increment(feedToSubtract) }, { merge: true });
-                await batch.commit();
-                
-                dailyRecordForm.reset();
-                document.getElementById('recordDate').value = new Date().toISOString().split('T')[0];
-                showToast('Registro diario guardado.');
-            } catch (error) {
-                console.error("Error guardando registro: ", error);
-                showToast('Error al guardar el registro.', true);
-            }
-        };
-
-        const handleSalesFormSubmit = async (e) => {
-            e.preventDefault();
-            const saleData = {
-                date: document.getElementById('saleDate').value,
-                eggs: parseInt(document.getElementById('saleEggs').value, 10),
-                price: parseFloat(document.getElementById('salePrice').value),
-                client: saleClientSelect.value,
-                createdAt: Timestamp.now()
-            };
-            
-            if (isNaN(saleData.eggs) || isNaN(saleData.price) || !saleData.date || !saleData.client) {
-                showToast('Error: Revisa los campos obligatorios.', true);
-                return;
-            }
-
-            try {
-                await addDoc(salesCollection, saleData);
-                salesForm.reset();
-                document.getElementById('saleDate').value = new Date().toISOString().split('T')[0];
-                showToast('Venta registrada.');
-            } catch (error) {
-                console.error("Error guardando venta: ", error);
-                showToast('Error al guardar la venta.', true);
-            }
-        };
-
-        const handleStockPurchaseSubmit = async (e) => {
-            e.preventDefault();
-            const purchaseData = {
-                date: document.getElementById('stockPurchaseDate').value,
-                kg: parseFloat(document.getElementById('stockPurchasedKg').value),
-                price: parseFloat(document.getElementById('stockPurchasePrice').value),
-                type: document.getElementById('stockPurchaseType').value,
-                createdAt: Timestamp.now()
-            };
-
-            if (isNaN(purchaseData.kg) || isNaN(purchaseData.price) || !purchaseData.date || !purchaseData.type) {
-                showToast('Error: Todos los campos son obligatorios.', true);
-                return;
-            }
-
-            try {
-                const batch = writeBatch(db);
-                // 1. Añadir la compra
-                batch.set(doc(purchasesCollection), purchaseData);
-                // 2. Actualizar el stock
-                batch.set(stockDocRef, { kg: increment(purchaseData.kg) }, { merge: true });
-                await batch.commit();
-                
-                stockPurchaseForm.reset();
-                document.getElementById('stockPurchaseDate').value = new Date().toISOString().split('T')[0];
-                showToast('Compra de insumo registrada.');
-            } catch (error) {
-                console.error("Error registrando compra: ", error);
-                showToast('Error al registrar la compra.', true);
-            }
-        };
+        }
         
-        // --- 9. MANEJADORES DE BORRADO (Firebase) ---
-        
-        const handleConfirmDelete = async () => {
-            const { id, type, path } = itemToDelete;
-            if (!id || !type || !path) return;
+        // Borrar un Lote
+        async function deleteLot(id) {
+            if (!userId) return;
             
-            // Referencia al documento a borrar
-            const docRef = doc(db, 'users', userId, path, id);
-
-            try {
-                if (type === 'record') {
-                    // Caso especial: Devolver stock al borrar registro
-                    const record = localRecordsCache.find(r => r.id === id);
-                    if (record && record.feedSupplied) {
-                        const feedToReturn = record.feedSupplied || 0;
-                        const batch = writeBatch(db);
-                        batch.delete(docRef);
-                        batch.update(stockDocRef, { kg: increment(feedToReturn) });
-                        await batch.commit();
-                    } else {
-                        // Borrar aunque no tenga feed (por si acaso)
-                         await deleteDoc(docRef);
-                    }
-                } else if (type === 'purchase') {
-                    // Caso especial: Restar stock al borrar compra
-                    const purchase = localPurchasesCache.find(p => p.id === id);
-                    if (purchase && purchase.kg) {
-                        const kgToSubtract = -Math.abs(purchase.kg || 0);
-                        const batch = writeBatch(db);
-                        batch.delete(docRef);
-                        batch.update(stockDocRef, { kg: increment(kgToSubtract) });
-                        await batch.commit();
-                    } else {
-                        // Borrar aunque no tenga kg (por si acaso)
-                         await deleteDoc(docRef);
-                    }
-                } else {
-                    // Borrado simple (Lot, Sale, Teacher, Client, Activity)
+            showConfirmModal('Borrar Lote', '¿Estás seguro de que quieres borrar este lote? Esta acción es permanente.', async () => {
+                try {
+                    const docRef = doc(db, `users/${userId}/hen_lots`, id);
                     await deleteDoc(docRef);
+                    showToast('Lote borrado.');
+                } catch (error) {
+                    console.error('Error al borrar lote:', error);
+                    showToast('Error al borrar lote.', 'error');
                 }
-                
-                showToast('Ítem eliminado.', true);
-            } catch (error) {
-                console.error("Error al borrar:", error);
-                showToast("Error al borrar el ítem.", true);
+            });
+        }
+        
+        // Guardar Registro Diario
+        async function handleDailyRecordSubmit(e) {
+            e.preventDefault();
+            if (!userId) return;
+            
+            const foodAmount = parseFloat(document.getElementById('record-food').value);
+            
+            // Validar stock
+            const stock = await getInventoryStock();
+            if (foodAmount > stock) {
+                showToast(`Error: No hay suficiente alimento. Stock: ${stock} kg.`, 'error');
+                return;
             }
             
-            closeConfirmDeleteModal();
-        };
-
-        const handleConfirmReset = async () => {
-            showToast('Borrando todos los datos... Esto puede tardar.', true);
+            // Obtener actividades seleccionadas
+            const selectedActivities = [];
+            document.querySelectorAll('#record-activities-checkboxes input:checked').forEach(input => {
+                selectedActivities.push(input.value);
+            });
             
-            // Función auxiliar para borrar todos los documentos de una colección
-            const deleteCollection = async (collectionRef) => {
-                const querySnapshot = await getDocs(collectionRef);
-                const batch = writeBatch(db);
-                querySnapshot.forEach(doc => batch.delete(doc.ref));
-                await batch.commit();
+            const recordData = {
+                date: Timestamp.fromDate(new Date(document.getElementById('record-date').value + 'T00:00:00')),
+                eggsHarvested: parseInt(document.getElementById('record-eggs').value),
+                foodSuppliedKg: foodAmount,
+                responsible: document.getElementById('record-responsible').value,
+                activities: selectedActivities, // NUEVO
+                observations: document.getElementById('record-observations').value, // NUEVO
+                createdAt: Timestamp.now()
+            };
+            
+            try {
+                // 1. Guardar el registro
+                const docRef = collection(db, `users/${userId}/daily_records`);
+                await addDoc(docRef, recordData);
+                
+                // 2. Descontar del inventario
+                await updateInventoryStock(-foodAmount); // Restar del stock
+                
+                showToast('Registro diario guardado.');
+                dailyRecordForm.reset();
+                // Limpiar checkboxes manualmente
+                document.querySelectorAll('#record-activities-checkboxes input:checked').forEach(input => {
+                    input.checked = false;
+                });
+            } catch (error) {
+                console.error('Error al guardar registro:', error);
+                showToast('Error al guardar registro.', 'error');
+            }
+        }
+        
+        // Borrar Registro Diario
+        async function deleteDailyRecord(id, foodSuppliedKg) {
+            if (!userId) return;
+            
+            showConfirmModal('Borrar Registro', '¿Seguro? Esto devolverá el alimento suministrado al stock.', async () => {
+                try {
+                    // 1. Borrar el registro
+                    const docRef = doc(db, `users/${userId}/daily_records`, id);
+                    await deleteDoc(docRef);
+                    
+                    // 2. Devolver el alimento al stock
+                    await updateInventoryStock(foodSuppliedKg);
+                    
+                    showToast('Registro borrado.');
+                } catch (error) {
+                    console.error('Error al borrar registro:', error);
+                    showToast('Error al borrar registro.', 'error');
+                }
+            });
+        }
+        
+        // Comprar Alimento (Insumo)
+        async function handleBuyFoodSubmit(e) {
+            e.preventDefault();
+            if (!userId) return;
+
+            const foodAmount = parseFloat(document.getElementById('buy-amount').value);
+            const purchaseData = {
+                date: Timestamp.fromDate(new Date(document.getElementById('buy-date').value + 'T00:00:00')),
+                type: document.getElementById('buy-type').value,
+                amountKg: foodAmount,
+                price: parseFloat(document.getElementById('buy-price').value),
+                createdAt: Timestamp.now()
+            };
+            
+            try {
+                // 1. Guardar la compra
+                const docRef = collection(db, `users/${userId}/purchases`);
+                await addDoc(docRef, purchaseData);
+                
+                // 2. Añadir al inventario
+                await updateInventoryStock(foodAmount); // Sumar al stock
+                
+                showToast('Compra registrada. Stock actualizado.');
+                buyFoodForm.reset();
+            } catch (error) {
+                console.error('Error al registrar compra:', error);
+                showToast('Error al registrar compra.', 'error');
+            }
+        }
+        
+        // Borrar Compra de Insumo
+        async function deletePurchase(id, amountKg) {
+            if (!userId) return;
+            
+            const stock = await getInventoryStock();
+            if (amountKg > stock) {
+                showToast(`Error: No se puede borrar. El stock (${stock} kg) quedaría negativo.`, 'error');
+                return;
+            }
+            
+            showConfirmModal('Borrar Compra', '¿Seguro? Esto descontará el insumo del stock.', async () => {
+                try {
+                    // 1. Borrar la compra
+                    const docRef = doc(db, `users/${userId}/purchases`, id);
+                    await deleteDoc(docRef);
+                    
+                    // 2. Descontar del stock
+                    await updateInventoryStock(-amountKg);
+                    
+                    showToast('Compra borrada.');
+                } catch (error) {
+                    console.error('Error al borrar compra:', error);
+                    showToast('Error al borrar compra.', 'error');
+                }
+            });
+        }
+        
+        // Registrar Venta
+        async function handleSalesFormSubmit(e) {
+            e.preventDefault();
+            if (!userId) return;
+            
+            // Validar stock de huevos
+            const eggsSold = parseInt(document.getElementById('sale-quantity').value);
+            const { totalHarvested, totalSold } = calculateEggTotals();
+            const eggStock = totalHarvested - totalSold;
+            
+            if (eggsSold > eggStock) {
+                showToast(`Error: No hay suficientes huevos. Stock: ${eggStock}`, 'error');
+                return;
+            }
+
+            const saleData = {
+                date: Timestamp.fromDate(new Date(document.getElementById('sale-date').value + 'T00:00:00')),
+                quantity: eggsSold,
+                price: parseFloat(document.getElementById('sale-price').value),
+                client: document.getElementById('sale-client').value,
+                createdAt: Timestamp.now()
+            };
+            
+            try {
+                const docRef = collection(db, `users/${userId}/sales`);
+                await addDoc(docRef, saleData);
+                showToast('Venta registrada.');
+                salesForm.reset();
+            } catch (error) {
+                console.error('Error al registrar venta:', error);
+                showToast('Error al registrar venta.', 'error');
+            }
+        }
+        
+        // Borrar Venta
+        async function deleteSale(id) {
+            if (!userId) return;
+            
+            showConfirmModal('Borrar Venta', '¿Seguro? Esto devolverá los huevos al stock.', async () => {
+                try {
+                    const docRef = doc(db, `users/${userId}/sales`, id);
+                    await deleteDoc(docRef);
+                    showToast('Venta borrada.');
+                } catch (error) {
+                    console.error('Error al borrar venta:', error);
+                    showToast('Error al borrar venta.', 'error');
+                }
+            });
+        }
+        
+        // ---- Lógica de Inventario (Singleton) ----
+        
+        // Obtener el stock actual (solo lectura)
+        async function getInventoryStock() {
+            if (!userId) return 0;
+            const docRef = doc(db, `users/${userId}/inventory/main`);
+            try {
+                const docSnap = await getDoc(docRef);
+                if (docSnap.exists()) {
+                    return docSnap.data().foodStockKg || 0;
+                }
+                return 0;
+            } catch (e) {
+                return 0;
+            }
+        }
+        
+        // Actualizar el stock (sumar o restar)
+        async function updateInventoryStock(amount) {
+            if (!userId) return;
+            const docRef = doc(db, `users/${userId}/inventory/main`);
+            try {
+                // Usamos 'increment' para evitar problemas de concurrencia
+                // y 'setDoc' con 'merge: true' para crear el doc si no existe.
+                await setDoc(docRef, { 
+                    foodStockKg: increment(amount) 
+                }, { merge: true });
+            } catch (error) {
+                console.error("Error actualizando stock:", error);
+                showToast("Error crítico al actualizar stock.", "error");
+            }
+        }
+        
+        // ---- Lógica de Configuración ----
+        
+        // Handler genérico para forms de Configuración
+        function handleConfigFormSubmit(collectionName, inputId) {
+            return async (e) => {
+                e.preventDefault();
+                if (!userId) return;
+                
+                const input = document.getElementById(inputId);
+                const name = input.value.trim();
+                if (!name) return;
+                
+                try {
+                    const colRef = collection(db, `users/${userId}/${collectionName}`);
+                    await addDoc(colRef, { name, createdAt: Timestamp.now() });
+                    input.value = '';
+                } catch (error) {
+                    console.error(`Error guardando ${collectionName}:`, error);
+                    showToast('Error al guardar.', 'error');
+                }
+            };
+        }
+        
+        // Borrar item de Configuración
+        async function deleteConfigItem(collectionName, id) {
+            if (!userId) return;
+            // No se pide confirmación para items de config por ser de bajo riesgo
+            try {
+                const docRef = doc(db, `users/${userId}/${collectionName}`, id);
+                await deleteDoc(docRef);
+            } catch (error) {
+                console.error(`Error borrando ${collectionName}:`, error);
+                showToast('Error al borrar.', 'error');
+            }
+        }
+        
+        // Resetear todos los datos
+        async function handleResetAllData() {
+            if (!userId) return;
+            
+            showConfirmModal('BORRAR TODO', 'Estás a punto de borrar TODOS los datos. Escribe "BORRAR" para confirmar.', async () => {
+                const confirmation = prompt('Para confirmar, escribe "BORRAR" (en mayúsculas):');
+                if (confirmation !== 'BORRAR') {
+                    showToast('Borrado cancelado.', 'error');
+                    return;
+                }
+
+                showToast('Borrando todos los datos...', 'success');
+                try {
+                    const collections = [
+                        'hen_lots', 'daily_records', 'purchases', 'sales',
+                        'config_teachers', 'config_clients', 'config_activities'
+                    ];
+                    
+                    const batch = writeBatch(db);
+
+                    // Borrar todas las colecciones
+                    for (const col of collections) {
+                        const colRef = collection(db, `users/${userId}/${col}`);
+                        const snapshot = await getDocs(colRef);
+                        snapshot.docs.forEach(doc => batch.delete(doc.ref));
+                    }
+                    
+                    // Borrar el inventario (documento suelto)
+                    const invRef = doc(db, `users/${userId}/inventory/main`);
+                    batch.delete(invRef);
+                    
+                    await batch.commit();
+                    showToast('Todos los datos han sido borrados.', 'success');
+                } catch (error) {
+                    console.error('Error al resetear datos:', error);
+                    showToast('Error al borrar los datos.', 'error');
+                }
+            });
+        }
+
+
+        // --- 6. LÓGICA DE RENDERIZADO (UI) ---
+
+        // Renderizar Lotes
+        function renderHenLots() {
+            const container = document.getElementById('hen-lots-container');
+            container.innerHTML = ''; // Limpiar
+            
+            if (allHenLots.length === 0) {
+                container.innerHTML = `<p class="text-gray-500 col-span-full">No hay lotes registrados. Añade uno para empezar.</p>`;
+                return;
+            }
+            
+            allHenLots.sort((a, b) => a.name.localeCompare(b.name));
+            
+            allHenLots.forEach(lot => {
+                const date = lot.dateAdded.toDate ? lot.dateAdded.toDate() : new Date(lot.dateAdded);
+                const totalAnimals = lot.henCount + lot.roosterCount;
+                const lotCard = `
+                    <div class="bg-white p-5 rounded-lg shadow-md">
+                        <div class="flex justify-between items-start mb-2">
+                            <h3 class="text-xl font-bold text-indigo-600">${lot.name}</h3>
+                            <div class="flex gap-2">
+                                <button class="edit-lot-btn text-gray-400 hover:text-blue-600" data-id="${lot.id}">
+                                    <i data-feather="edit-2" class="w-5 h-5"></i>
+                                </button>
+                                <button class="delete-lot-btn text-gray-400 hover:text-red-600" data-id="${lot.id}">
+                                    <i data-feather="trash-2" class="w-5 h-5"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="space-y-1 text-sm text-gray-700">
+                            <p><strong>Gallinas:</strong> ${lot.henCount}</p>
+                            <p><strong>Gallos:</strong> ${lot.roosterCount}</p>
+                            <p><strong>Total:</strong> ${totalAnimals} animales</p>
+                            <p><strong>Ración/Animal:</strong> ${lot.rationPerAnimalKg} kg</p>
+                            <p><strong>Ración Total Lote:</strong> ${(totalAnimals * lot.rationPerAnimalKg).toFixed(2)} kg/día</p>
+                            <p><strong>Edad:</strong> ${lot.ageWeeks} semanas</p>
+                            <p><strong>Ingreso:</strong> ${date.toLocaleDateString()}</p>
+                        </div>
+                    </div>
+                `;
+                container.innerHTML += lotCard;
+            });
+            
+            // Activar iconos
+            feather.replace();
+            
+            // Añadir listeners a los botones
+            container.querySelectorAll('.edit-lot-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const id = e.currentTarget.getAttribute('data-id');
+                    const lot = allHenLots.find(l => l.id === id);
+                    showLotModal(e, lot);
+                });
+            });
+            container.querySelectorAll('.delete-lot-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const id = e.currentTarget.getAttribute('data-id');
+                    deleteLot(id);
+                });
+            });
+        }
+        
+        // Renderizar Registros Diarios
+        function renderDailyRecords() {
+            const list = document.getElementById('daily-records-list');
+            list.innerHTML = '';
+            
+            if (allDailyRecords.length === 0) {
+                list.innerHTML = `<p class="text-gray-500 text-sm">No hay registros diarios.</p>`;
+                return;
+            }
+            
+            // Ordenar por fecha (más nuevos primero)
+            allDailyRecords.sort((a, b) => b.date.seconds - a.date.seconds);
+            
+            allDailyRecords.forEach(record => {
+                const date = record.date.toDate();
+                // NUEVO: Mostrar actividades y observaciones
+                const activitiesText = record.activities && record.activities.length > 0
+                    ? record.activities.join(', ')
+                    : 'N/A';
+                const observationsText = record.observations ? record.observations : 'Sin observaciones.';
+                
+                const item = `
+                    <div class="p-3 bg-gray-50 rounded-md border">
+                        <div class="flex justify-between items-center mb-1">
+                            <span class="font-semibold text-indigo-600">${date.toLocaleDateString()}</span>
+                            <button class="delete-record-btn text-gray-400 hover:text-red-600" data-id="${record.id}" data-food="${record.foodSuppliedKg}">
+                                <i data-feather="trash-2" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                        <p class="text-sm"><strong>Huevos:</strong> ${record.eggsHarvested}</p>
+                        <p class="text-sm"><strong>Alimento:</strong> ${record.foodSuppliedKg} kg</p>
+                        <p class="text-sm"><strong>Responsable:</strong> ${record.responsible}</p>
+                        <p class="text-sm"><strong>Actividades:</strong> ${activitiesText}</p>
+                        <p class="text-sm text-gray-500 italic mt-1">"${observationsText}"</p>
+                    </div>
+                `;
+                list.innerHTML += item;
+            });
+            
+            feather.replace();
+            
+            // Listeners
+            list.querySelectorAll('.delete-record-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const id = e.currentTarget.getAttribute('data-id');
+                    const food = parseFloat(e.currentTarget.getAttribute('data-food'));
+                    deleteDailyRecord(id, food);
+                });
+            });
+        }
+        
+        // Renderizar Compras
+        function renderPurchases() {
+            const list = document.getElementById('food-purchases-list');
+            list.innerHTML = '';
+            
+            if (allPurchases.length === 0) {
+                list.innerHTML = `<p class="text-gray-500 text-sm">No hay compras registradas.</p>`;
+                return;
+            }
+
+            allPurchases.sort((a, b) => b.date.seconds - a.date.seconds);
+            
+            allPurchases.forEach(purchase => {
+                const date = purchase.date.toDate();
+                const item = `
+                    <div class="p-3 bg-gray-50 rounded-md border">
+                        <div class="flex justify-between items-center mb-1">
+                            <span class="font-semibold text-green-600">${date.toLocaleDateString()}</span>
+                            <button class="delete-purchase-btn text-gray-400 hover:text-red-600" data-id="${purchase.id}" data-amount="${purchase.amountKg}">
+                                <i data-feather="trash-2" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                        <p class="text-sm"><strong>Tipo:</strong> ${purchase.type}</p>
+                        <p class="text-sm"><strong>Cantidad:</strong> ${purchase.amountKg} kg</p>
+                        <p class="text-sm"><strong>Precio:</strong> $${purchase.price}</p>
+                    </div>
+                `;
+                list.innerHTML += item;
+            });
+            
+            feather.replace();
+            
+            // Listeners
+            list.querySelectorAll('.delete-purchase-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const id = e.currentTarget.getAttribute('data-id');
+                    const amount = parseFloat(e.currentTarget.getAttribute('data-amount'));
+                    deletePurchase(id, amount);
+                });
+            });
+        }
+        
+        // Renderizar Ventas
+        function renderSales() {
+            const list = document.getElementById('sales-list');
+            list.innerHTML = '';
+            
+            if (allSales.length === 0) {
+                list.innerHTML = `<p class="text-gray-500 text-sm">No hay ventas registradas.</p>`;
+                return;
+            }
+
+            allSales.sort((a, b) => b.date.seconds - a.date.seconds);
+            
+            allSales.forEach(sale => {
+                const date = sale.date.toDate();
+                const item = `
+                    <div class="p-3 bg-gray-50 rounded-md border">
+                        <div class="flex justify-between items-center mb-1">
+                            <span class="font-semibold text-blue-600">${date.toLocaleDateString()}</span>
+                            <button class="delete-sale-btn text-gray-400 hover:text-red-600" data-id="${sale.id}">
+                                <i data-feather="trash-2" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                        <p class="text-sm"><strong>Cliente:</strong> ${sale.client}</p>
+                        <p class="text-sm"><strong>Cantidad:</strong> ${sale.quantity} huevos</p>
+                        <p class="text-sm"><strong>Precio:</strong> $${sale.price}</p>
+                    </div>
+                `;
+                list.innerHTML += item;
+            });
+            
+            feather.replace();
+            
+            // Listeners
+            list.querySelectorAll('.delete-sale-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const id = e.currentTarget.getAttribute('data-id');
+                    deleteSale(id);
+                });
+            });
+        }
+        
+        // Renderizar listas de Configuración (genérico)
+        function renderConfigList(items, listId, deleteFn) {
+            const list = document.getElementById(listId);
+            const collectionName = listId.replace('config-', '').replace('-list', '');
+            list.innerHTML = '';
+            
+            if (items.length === 0) {
+                list.innerHTML = `<p class="text-gray-500 text-sm">No hay ítems cargados.</p>`;
+                return;
+            }
+            
+            items.sort((a, b) => a.name.localeCompare(b.name));
+            
+            items.forEach(item => {
+                const el = document.createElement('div');
+                el.className = 'config-item';
+                el.innerHTML = `
+                    <span class="text-gray-700">${item.name}</span>
+                    <button class="delete-config-btn text-gray-400 hover:text-red-600" data-id="${item.id}" data-collection="${collectionName}">
+                        <i data-feather="x" class="w-4 h-4"></i>
+                    </button>
+                `;
+                list.appendChild(el);
+            });
+            
+            feather.replace();
+            
+            // Listeners
+            list.querySelectorAll('.delete-config-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const id = e.currentTarget.getAttribute('data-id');
+                    const col = e.currentTarget.getAttribute('data-collection');
+                    
+                    // Mapeo de nombre de colección
+                    const colMap = {
+                        'teacher': 'config_teachers',
+                        'client': 'config_clients',
+                        'activity': 'config_activities'
+                    };
+                    deleteFn(colMap[col], id);
+                });
+            });
+        }
+        
+        // Actualizar Desplegable de Docentes
+        function updateTeacherDropdowns() {
+            const select = document.getElementById('record-responsible');
+            select.innerHTML = '<option value="">Seleccione un docente</option>'; // Limpiar
+            allTeachers.sort((a, b) => a.name.localeCompare(b.name));
+            allTeachers.forEach(teacher => {
+                select.innerHTML += `<option value="${teacher.name}">${teacher.name}</option>`;
+            });
+        }
+        
+        // Actualizar Desplegable de Clientes
+        function updateClientDropdowns() {
+            const select = document.getElementById('sale-client');
+            select.innerHTML = '<option value="">Seleccione un cliente</option>'; // Limpiar
+            allClients.sort((a, b) => a.name.localeCompare(b.name));
+            allClients.forEach(client => {
+                select.innerHTML += `<option value="${client.name}">${client.name}</option>`;
+            });
+        }
+        
+        // Actualizar Checkboxes de Actividades
+        function updateActivityCheckboxes() {
+            const container = document.getElementById('record-activities-checkboxes');
+            container.innerHTML = ''; // Limpiar
+            
+            if (allActivities.length === 0) {
+                container.innerHTML = `<p class="text-gray-500 text-sm">Cargue actividades en Configuración.</p>`;
+                return;
+            }
+            
+            allActivities.sort((a, b) => a.name.localeCompare(b.name));
+            allActivities.forEach(activity => {
+                container.innerHTML += `
+                    <label class="flex items-center gap-2 text-sm">
+                        <input type="checkbox" value="${activity.name}" class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+                        ${activity.name}
+                    </label>
+                `;
+            });
+        }
+
+
+        // --- 7. LÓGICA DEL DASHBOARD (Cálculos) ---
+
+        // Función central para actualizar todas las métricas
+        async function updateDashboard() {
+            if (!userId) return; // Salir si no estamos listos
+            
+            const totalHens = allHenLots.reduce((sum, lot) => sum + lot.henCount, 0);
+            const totalAnimals = allHenLots.reduce((sum, lot) => sum + lot.henCount + lot.roosterCount, 0);
+            const totalDailyRation = allHenLots.reduce((sum, lot) => sum + ((lot.henCount + lot.roosterCount) * lot.rationPerAnimalKg), 0);
+            
+            // Obtener stock desde Firebase (es la fuente de verdad)
+            const foodStock = await getInventoryStock(); 
+            
+            const foodDaysLeft = (totalDailyRation > 0 && foodStock > 0) ? (foodStock / totalDailyRation).toFixed(0) : 0;
+            
+            // Cálculos del Mes Actual
+            const now = new Date();
+            const currentYear = now.getFullYear();
+            const currentMonth = now.getMonth();
+            
+            const filterByCurrentMonth = (item) => {
+                const itemDate = item.date.toDate();
+                return itemDate.getFullYear() === currentYear && itemDate.getMonth() === currentMonth;
             };
 
-            try {
-                // Borrar todas las colecciones
-                await Promise.all([
-                    deleteCollection(lotsCollection),
-                    deleteCollection(recordsCollection),
-                    deleteCollection(purchasesCollection),
-                    deleteCollection(salesCollection),
-                    deleteCollection(teachersCollection),
-                    deleteCollection(clientsCollection),
-                    deleteCollection(activitiesCollection),
-                    setDoc(stockDocRef, { kg: 0 }) // Resetear stock
-                ]);
-                showToast("Todos los datos han sido borrados.");
-            } catch (error) {
-                console.error("Error borrando todo:", error);
-                showToast("Error al borrar los datos.", true);
+            const eggsThisMonth = allDailyRecords
+                .filter(filterByCurrentMonth)
+                .reduce((sum, r) => sum + r.eggsHarvested, 0);
+                
+            const salesThisMonth = allSales
+                .filter(filterByCurrentMonth)
+                .reduce((sum, s) => sum + s.price, 0);
+
+            const purchasesThisMonth = allPurchases
+                .filter(filterByCurrentMonth)
+                .reduce((sum, p) => sum + p.price, 0);
+
+            // Balance
+            const balanceMonth = salesThisMonth - purchasesThisMonth;
+            
+            const { totalHarvested, totalSold } = calculateEggTotals();
+            const eggStock = totalHarvested - totalSold;
+            
+            const totalIncome = allSales.reduce((sum, s) => sum + s.price, 0);
+            const totalExpenses = allPurchases.reduce((sum, p) => sum + p.price, 0);
+            const balanceTotal = totalIncome - totalExpenses;
+
+            // Actualizar DOM
+            document.getElementById('metric-total-hens').textContent = totalHens;
+            document.getElementById('metric-food-stock').textContent = `${foodStock.toFixed(2)} kg`;
+            document.getElementById('metric-food-days-left').textContent = `${foodDaysLeft} días`;
+            
+            // MODIFICADO: Mostrar métricas mensuales
+            document.getElementById('metric-eggs-today').textContent = eggsThisMonth;
+            document.getElementById('metric-sales-today').textContent = `$${salesThisMonth.toFixed(2)}`;
+            document.getElementById('metric-egg-stock').textContent = eggStock;
+            
+            // MODIFICADO: Mostrar balance mensual
+            document.getElementById('metric-balance-month').textContent = `$${balanceMonth.toFixed(2)}`;
+            document.getElementById('metric-balance-month-detail').textContent = `(Ingresos: $${salesThisMonth.toFixed(2)} - Gastos: $${purchasesThisMonth.toFixed(2)})`;
+
+            document.getElementById('metric-balance-total').textContent = `$${balanceTotal.toFixed(2)}`;
+            document.getElementById('metric-balance-detail').textContent = `(Ingresos: $${totalIncome.toFixed(2)} - Gastos: $${totalExpenses.toFixed(2)})`;
+        }
+        
+        // Calcular totales de huevos (para stock)
+        function calculateEggTotals() {
+            const totalHarvested = allDailyRecords.reduce((sum, r) => sum + r.eggsHarvested, 0);
+            const totalSold = allSales.reduce((sum, s) => sum + s.quantity, 0);
+            return { totalHarvested, totalSold };
+        }
+        
+        // Actualizar Gráficos
+        function updateCharts() {
+            updateEggProductionChart();
+            updateSalesByClientChart();
+        }
+
+        // Gráfico de Producción (por Mes)
+        function updateEggProductionChart() {
+            const ctx = document.getElementById('eggProductionChart');
+            if (!ctx) return;
+            
+            // Agrupar huevos por mes (YYYY-MM)
+            const eggsByMonth = allDailyRecords.reduce((acc, record) => {
+                const date = record.date.toDate();
+                const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+                if (!acc[monthKey]) {
+                    acc[monthKey] = 0;
+                }
+                acc[monthKey] += record.eggsHarvested;
+                return acc;
+            }, {});
+            
+            const sortedLabels = Object.keys(eggsByMonth).sort();
+            const data = sortedLabels.map(label => eggsByMonth[label]);
+
+            if (eggChart) {
+                eggChart.data.labels = sortedLabels;
+                eggChart.data.datasets[0].data = data;
+                eggChart.update();
+            } else {
+                eggChart = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: sortedLabels,
+                        datasets: [{
+                            label: 'Huevos Cosechados por Mes',
+                            data: data,
+                            backgroundColor: 'rgba(79, 70, 229, 0.8)',
+                            borderColor: 'rgba(79, 70, 229, 1)',
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        scales: {
+                            y: { beginAtZero: true }
+                        }
+                    }
+                });
+            }
+        }
+        
+        // Gráfico de Ventas por Cliente
+        function updateSalesByClientChart() {
+            const ctx = document.getElementById('salesByClientChart');
+            if (!ctx) return;
+            
+            // Agrupar ventas (total $) por cliente
+            const salesByClient = allSales.reduce((acc, sale) => {
+                const client = sale.client || 'Cliente Desconocido';
+                if (!acc[client]) {
+                    acc[client] = 0;
+                }
+                acc[client] += sale.price;
+                return acc;
+            }, {});
+            
+            const labels = Object.keys(salesByClient);
+            const data = Object.values(salesByClient);
+
+            if (salesChart) {
+                salesChart.data.labels = labels;
+                salesChart.data.datasets[0].data = data;
+                salesChart.update();
+            } else {
+                salesChart = new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Total Vendido ($)',
+                            data: data,
+                            backgroundColor: [
+                                'rgba(79, 70, 229, 0.8)',
+                                'rgba(54, 162, 235, 0.8)',
+                                'rgba(255, 206, 86, 0.8)',
+                                'rgba(75, 192, 192, 0.8)',
+                                'rgba(153, 102, 255, 0.8)',
+                                'rgba(255, 159, 64, 0.8)'
+                            ],
+                        }]
+                    },
+                    options: {
+                        responsive: true
+                    }
+                });
+            }
+        }
+        
+
+        // --- 8. LÓGICA DE REPORTES (CSV) ---
+        
+        // Generar Reporte Unificado
+        function generateUnifiedReport() {
+            const year = parseInt(reportYearSelect.value);
+            const month = parseInt(reportMonthSelect.value);
+            const period = reportPeriodSelect.value;
+            
+            let data = [];
+            let filename = `Reporte_Avicola_${year}`;
+            
+            // Filtros de fecha
+            const filterFn = (item) => {
+                const itemDate = item.date.toDate();
+                if (period === 'annual') {
+                    return itemDate.getFullYear() === year;
+                } else {
+                    return itemDate.getFullYear() === year && itemDate.getMonth() === month;
+                }
+            };
+
+            if (period === 'monthly') {
+                filename += `_${String(month + 1).padStart(2, '0')}`;
             }
             
-            closeConfirmResetModal();
-        };
+            // Encabezados
+            data.push([
+                "Fecha", "Tipo de Movimiento", "Detalle", 
+                "Actividades", "Observaciones", "Responsable/Cliente",
+                "Cantidad (kg/huevos)", "Ingreso ($)", "Gasto ($)"
+            ]);
 
-        // --- 10. FUNCIONES DE REPORTE (Actualizadas) ---
-        // (Usan los caches locales, que son llenados por onSnapshot)
+            // Procesar Registros Diarios
+            allDailyRecords.filter(filterFn).forEach(r => {
+                data.push([
+                    r.date.toDate().toLocaleDateString(),
+                    "Registro Diario",
+                    `Cosecha: ${r.eggsHarvested} huevos, Alimento: ${r.foodSuppliedKg} kg`,
+                    r.activities ? r.activities.join(', ') : '', // NUEVO
+                    r.observations || '', // NUEVO
+                    r.responsible,
+                    r.eggsHarvested, // Cantidad (huevos)
+                    0, // Ingreso
+                    0  // Gasto (el alimento se cuenta en Compras)
+                ]);
+            });
 
-        const convertToCSV = (data, headers) => {
-            const headerRow = headers.join(';'); 
-            const rows = data.map(obj => 
-                headers.map(header => {
-                    let value = obj[header] === null || obj[header] === undefined ? '' : obj[header];
-                    if (typeof value === 'number') value = value.toString().replace('.', ',');
-                    if (typeof value === 'string') value = `"${value.replace(/"/g, '""')}"`;
-                    return value;
-                }).join(';')
-            );
-            const bom = '\uFEFF';
-            return bom + [headerRow, ...rows].join('\r\n');
-        };
+            // Procesar Compras
+            allPurchases.filter(filterFn).forEach(p => {
+                data.push([
+                    p.date.toDate().toLocaleDateString(),
+                    "Compra de Insumo",
+                    p.type,
+                    "", "", // Actividades, Obs
+                    "Proveedor",
+                    p.amountKg, // Cantidad (kg)
+                    0, // Ingreso
+                    p.price // Gasto
+                ]);
+            });
 
-        const downloadCSV = (csvContent, filename) => {
-            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-            const link = document.createElement('a');
-            const url = URL.createObjectURL(blob);
-            link.setAttribute('href', url);
-            link.setAttribute('download', filename);
-            link.style.visibility = 'hidden';
+            // Procesar Ventas
+            allSales.filter(filterFn).forEach(s => {
+                data.push([
+                    s.date.toDate().toLocaleDateString(),
+                    "Venta de Huevos",
+                    `${s.quantity} huevos`,
+                    "", "", // Actividades, Obs
+                    s.client,
+                    s.quantity, // Cantidad (huevos)
+                    s.price, // Ingreso
+                    0 // Gasto
+                ]);
+            });
+
+            // Ordenar por fecha
+            data = [data[0], ...data.slice(1).sort((a, b) => new Date(a[0]) - new Date(b[0]))];
+
+            downloadCSV(data, `${filename}.csv`);
+        }
+        
+        // Función para descargar el CSV
+        function downloadCSV(data, filename) {
+            let csvContent = "data:text/csv;charset=utf-f8,";
+            
+            data.forEach(rowArray => {
+                // Escapar comas y comillas
+                let row = rowArray.map(item => {
+                    let str = String(item);
+                    if (str.includes(',') || str.includes('\n') || str.includes('"')) {
+                        return `"${str.replace(/"/g, '""')}"`;
+                    }
+                    return str;
+                }).join(",");
+                csvContent += row + "\r\n";
+            });
+
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", filename);
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
-        };
-
-        const handleReportPeriodChange = () => {
-            reportMonthContainer.classList.toggle('hidden', reportPeriodSelect.value === 'annual');
-        };
-
-        const handleExportUnifiedReport = () => {
-            const period = reportPeriodSelect.value;
-            const month = reportMonthSelect.value;
-            const year = reportYearInput.value;
-            if (!year) return showToast('Por favor, ingresa un año.', true);
             
-            const prefix = (period === 'annual') ? year : `${year}-${month}`;
-            let unifiedData = [];
+            showToast('Reporte descargado.');
+        }
 
-            try {
-                localRecordsCache
-                    .filter(r => r.date.startsWith(prefix))
-                    .forEach(r => {
-                        const activitiesStr = r.activities ? r.activities.join(', ') : '';
-                        unifiedData.push({ Fecha: r.date, Tipo: 'Registro - Cosecha', Detalle: `Huevos Cosechados: ${r.eggsHarvested}`, Monto: 0, Cliente: '', Responsable: r.responsible, Kg: 0, Huevos: r.eggsHarvested, Actividades: activitiesStr, Observaciones: r.observations });
-                        unifiedData.push({ Fecha: r.date, Tipo: 'Registro - Consumo', Detalle: `Alimento Suministrado`, Monto: 0, Cliente: '', Responsable: r.responsible, Kg: -Math.abs(r.feedSupplied), Huevos: 0, Actividades: activitiesStr, Observaciones: r.observations });
-                    });
-                localPurchasesCache
-                    .filter(p => p.date.startsWith(prefix))
-                    .forEach(p => {
-                        unifiedData.push({ Fecha: p.date, Tipo: 'Compra (Insumo)', Detalle: p.type || 'N/A', Monto: -Math.abs(p.price), Cliente: '', Responsable: '', Kg: p.kg, Huevos: 0, Actividades: '', Observaciones: '' });
-                    });
-                localSalesCache
-                    .filter(s => s.date.startsWith(prefix))
-                    .forEach(s => {
-                        unifiedData.push({ Fecha: s.date, Tipo: 'Venta', Detalle: `Venta de ${s.eggs} huevos`, Monto: s.price, Cliente: s.client, Responsable: '', Kg: 0, Huevos: -Math.abs(s.eggs), Actividades: '', Observaciones: '' });
-                    });
 
-                if (unifiedData.length === 0) return showToast(`No hay datos para ${prefix}.`, true);
+        // --- 9. INICIAR LA APLICACIÓN ---
+        initializeAppAndAuth();
 
-                unifiedData.sort((a, b) => new Date(a.Fecha) - new Date(b.Fecha));
-                const headers = ['Fecha', 'Tipo', 'Detalle', 'Monto', 'Cliente', 'Responsable', 'Kg', 'Huevos', 'Actividades', 'Observaciones'];
-                const filename = `reporte_unificado_${prefix}.csv`;
-                downloadCSV(convertToCSV(unifiedData, headers), filename);
-                showToast('Reporte unificado generado.', false);
-
-            } catch (error) {
-                console.error('Error al generar CSV:', error);
-                showToast('Error al generar el reporte.', true);
-            }
-        };
-
-        // --- 11. MANEJADORES DE CONFIGURACIÓN (Firebase) ---
-        
-        const addSettingItem = async (e, collectionRef, inputElement) => {
-            e.preventDefault();
-            const name = inputElement.value.trim();
-            if (!name) return;
-            
-            // Simple verificación de duplicados en caché
-            const cache = (collectionRef === teachersCollection) ? localTeachersCache : (collectionRef === clientsCollection) ? localClientsCache : localActivitiesCache;
-            if (cache.find(i => i.name.toLowerCase() === name.toLowerCase())) {
-                return showToast("Este ítem ya existe.", true);
-            }
-            
-            try {
-                await addDoc(collectionRef, { name });
-                inputElement.value = '';
-                // onSnapshot se encarga de recargar
-            } catch (error) {
-                console.error("Error añadiendo item:", error);
-                showToast('Error al añadir ítem.', true);
-            }
-        };
-        
-        // --- 12. EVENT LISTENERS E INICIALIZACIÓN ---
-        
-        const initializeEventListeners = () => {
-            navButtons.forEach(button => button.addEventListener('click', () => showSection(button.dataset.section)));
-            addLotBtn.addEventListener('click', () => openModal());
-            closeModalBtn.addEventListener('click', closeModal);
-            cancelModalBtn.addEventListener('click', closeModal);
-            lotForm.addEventListener('submit', handleLotFormSubmit);
-            
-            // Listeners de borrado (actualizados para pasar el 'path')
-            lotDisplayArea.addEventListener('click', (e) => {
-                const button = e.target.closest('button');
-                if (!button) return;
-                const lotId = button.dataset.id;
-                if (button.dataset.action === 'edit') openModal(lotId);
-                else if (button.dataset.action === 'delete') openConfirmDeleteModal(lotId, 'lot', '¿Eliminar este lote?', button.dataset.path);
-            });
-            recentRecordsList.addEventListener('click', (e) => {
-                const button = e.target.closest('[data-action="delete"]');
-                if (button) openConfirmDeleteModal(button.dataset.id, button.dataset.type, '¿Eliminar este registro diario?', button.dataset.path);
-            });
-            recentSalesList.addEventListener('click', (e) => {
-                const button = e.target.closest('[data-action="delete"]');
-                if (button) openConfirmDeleteModal(button.dataset.id, button.dataset.type, '¿Eliminar esta venta?', button.dataset.path);
-            });
-            recentPurchasesList.addEventListener('click', (e) => {
-                const button = e.target.closest('[data-action="delete"]');
-                if (button) openConfirmDeleteModal(button.dataset.id, button.dataset.type, '¿Eliminar esta compra?', button.dataset.path);
-            });
-            teacherList.addEventListener('click', (e) => {
-                const button = e.target.closest('[data-action="delete"]');
-                if (button) openConfirmDeleteModal(button.dataset.id, button.dataset.type, `¿Eliminar a ${button.previousElementSibling.textContent}?`, button.dataset.path);
-            });
-            clientList.addEventListener('click', (e) => {
-                const button = e.target.closest('[data-action="delete"]');
-                if (button) openConfirmDeleteModal(button.dataset.id, button.dataset.type, `¿Eliminar a ${button.previousElementSibling.textContent}?`, button.dataset.path);
-            });
-            activityList.addEventListener('click', (e) => {
-                const button = e.target.closest('[data-action="delete"]');
-                if (button) openConfirmDeleteModal(button.dataset.id, button.dataset.type, `¿Eliminar actividad "${button.previousElementSibling.textContent}"?`, button.dataset.path);
-            });
-
-            // Modales de Confirmación
-            cancelDeleteBtn.addEventListener('click', closeConfirmDeleteModal);
-            confirmDeleteBtn.addEventListener('click', handleConfirmDelete);
-            btnResetAllData.addEventListener('click', openConfirmResetModal);
-            cancelResetBtn.addEventListener('click', closeConfirmResetModal);
-            confirmResetBtn.addEventListener('click', handleConfirmReset);
-
-            // Formularios
-            dailyRecordForm.addEventListener('submit', handleDailyRecordSubmit);
-            stockPurchaseForm.addEventListener('submit', handleStockPurchaseSubmit);
-            salesForm.addEventListener('submit', handleSalesFormSubmit);
-            teacherForm.addEventListener('submit', (e) => addSettingItem(e, teachersCollection, newTeacherNameInput));
-            clientForm.addEventListener('submit', (e) => addSettingItem(e, clientsCollection, newClientNameInput));
-            activityForm.addEventListener('submit', (e) => addSettingItem(e, activitiesCollection, newActivityNameInput));
-            
-            // Reportes
-            reportPeriodSelect.addEventListener('change', handleReportPeriodChange);
-            btnExportUnified.addEventListener('click', handleExportUnifiedReport);
-            
-            // Configuración inicial de UI
-            const now = new Date();
-            const today = now.toISOString().split('T')[0];
-            document.getElementById('recordDate').value = today;
-            document.getElementById('saleDate').value = today;
-            document.getElementById('stockPurchaseDate').value = today;
-            reportMonthSelect.value = (now.getMonth() + 1).toString().padStart(2, '0');
-            reportYearInput.value = now.getFullYear();
-            
-            feather.replace();
-            showSection('dashboard-section');
-        };
-
-        // --- 13. INICIALIZACIÓN DE FIREBASE Y AUTH ---
-
-        const initializeAppAndAuth = () => {
-            try {
-                // Verificar que la config no sea placeholder
-                if (firebaseConfig.apiKey.startsWith("AIzaSy") === false) {
-                     showToast("Error: Revisa tu 'firebaseConfig'. No parece válida.", true);
-                     console.error("firebaseConfig parece ser un placeholder.");
-                     return; 
-                }
-
-                app = initializeApp(firebaseConfig);
-                db = getFirestore(app);
-                auth = getAuth(app);
-
-                onAuthStateChanged(auth, (user) => {
-                    if (user) {
-                        // Usuario ya está logueado (anónimamente)
-                        userId = user.uid;
-                        userIdDisplay.textContent = `ID de Usuario: ${userId}`;
-                        // Ahora que tenemos userId, inicializamos los listeners
-                        initializeFirestoreListeners();
-                    } else {
-                        // Usuario no logueado, loguear anónimamente
-                        signInAnonymously(auth).catch((error) => {
-                            console.error("Error en login anónimo:", error);
-                            // Error más específico
-                            showToast("Error de autenticación. Revisa tu API key y config.", true);
-                        });
-                    }
-                });
-            } catch (error) {
-                console.error("Error al inicializar Firebase:", error);
-                // Error más específico
-                showToast("Error al conectar con Firebase. ¿API Key válida?", true);
-            }
-        };
-
-        
-        // --- INICIO DE LA APP ---
-        document.addEventListener('DOMContentLoaded', () => {
-            initializeEventListeners();
-            initializeAppAndAuth();
-        });
-        
     </script>
+    
 </body>
 </html>
