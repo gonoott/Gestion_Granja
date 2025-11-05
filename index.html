@@ -543,7 +543,7 @@
             onSnapshot, 
             collection, 
             query,
-            writeBatch,
+            writeBatch, // CORRECCIÓN: Importar writeBatch
             getDocs,
             Timestamp,
             increment,
@@ -683,18 +683,33 @@
                 'config_teachers': (data) => { allTeachers = data; renderConfigList(data, 'config-teacher-list', deleteConfigItem); updateTeacherDropdowns(); },
                 'config_clients': (data) => { allClients = data; renderConfigList(data, 'config-client-list', deleteConfigItem); updateClientDropdowns(); },
                 'config_activities': (data) => { allActivities = data; renderConfigList(data, 'config-activity-list', deleteConfigItem); updateActivityCheckboxes(); },
+                'inventory': (data) => { 
+                    // Listener especial para el inventario
+                    // (Aunque lo actualizamos con 'increment', un listener
+                    // asegura que el dashboard esté sincronizado)
+                    updateDashboard();
+                },
             };
             
             // Crear un listener por cada colección
             for (const [path, callback] of Object.entries(collectionsPaths)) {
-                const collectionRef = collection(db, `users/${userId}/${path}`);
-                onSnapshot(collectionRef, (snapshot) => {
-                    const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                    callback(data);
-                }, (error) => {
-                    console.error(`Error escuchando ${path}:`, error);
-                    showToast(`Error cargando ${path}`, "error");
-                });
+                // Caso especial para inventario (es un doc, no una colección)
+                if (path === 'inventory') {
+                    const docRef = doc(db, `users/${userId}/inventory/main`);
+                    onSnapshot(docRef, (docSnap) => {
+                        // Solo necesitamos que dispare el updateDashboard
+                        callback(null); 
+                    });
+                } else {
+                    const collectionRef = collection(db, `users/${userId}/${path}`);
+                    onSnapshot(collectionRef, (snapshot) => {
+                        const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                        callback(data);
+                    }, (error) => {
+                        console.error(`Error escuchando ${path}:`, error);
+                        showToast(`Error cargando ${path}`, "error");
+                    });
+                }
             }
         }
         
@@ -914,12 +929,19 @@
             };
             
             try {
-                // 1. Guardar el registro
-                const docRef = collection(db, `users/${userId}/daily_records`);
-                await addDoc(docRef, recordData);
+                // CORRECCIÓN: Usar writeBatch para operación atómica
+                const batch = writeBatch(db);
+                
+                // 1. Guardar el registro (generar ref primero)
+                const docRef = doc(collection(db, `users/${userId}/daily_records`));
+                batch.set(docRef, recordData);
                 
                 // 2. Descontar del inventario
-                await updateInventoryStock(-foodAmount); // Restar del stock
+                const invRef = doc(db, `users/${userId}/inventory/main`);
+                batch.set(invRef, { foodStockKg: increment(-foodAmount) }, { merge: true });
+                
+                // Ejecutar la transacción
+                await batch.commit();
                 
                 showToast('Registro diario guardado.');
                 dailyRecordForm.reset();
@@ -939,12 +961,18 @@
             
             showConfirmModal('Borrar Registro', '¿Seguro? Esto devolverá el alimento suministrado al stock.', async () => {
                 try {
+                    // CORRECCIÓN: Usar writeBatch para operación atómica
+                    const batch = writeBatch(db);
+
                     // 1. Borrar el registro
                     const docRef = doc(db, `users/${userId}/daily_records`, id);
-                    await deleteDoc(docRef);
+                    batch.delete(docRef);
                     
                     // 2. Devolver el alimento al stock
-                    await updateInventoryStock(foodSuppliedKg);
+                    const invRef = doc(db, `users/${userId}/inventory/main`);
+                    batch.set(invRef, { foodStockKg: increment(foodSuppliedKg) }, { merge: true });
+                    
+                    await batch.commit();
                     
                     showToast('Registro borrado.');
                 } catch (error) {
@@ -969,12 +997,18 @@
             };
             
             try {
-                // 1. Guardar la compra
-                const docRef = collection(db, `users/${userId}/purchases`);
-                await addDoc(docRef, purchaseData);
+                // CORRECCIÓN: Usar writeBatch para operación atómica
+                const batch = writeBatch(db);
+
+                // 1. Guardar la compra (generar ref primero)
+                const docRef = doc(collection(db, `users/${userId}/purchases`));
+                batch.set(docRef, purchaseData);
                 
                 // 2. Añadir al inventario
-                await updateInventoryStock(foodAmount); // Sumar al stock
+                const invRef = doc(db, `users/${userId}/inventory/main`);
+                batch.set(invRef, { foodStockKg: increment(foodAmount) }, { merge: true });
+                
+                await batch.commit();
                 
                 showToast('Compra registrada. Stock actualizado.');
                 buyFoodForm.reset();
@@ -996,12 +1030,18 @@
             
             showConfirmModal('Borrar Compra', '¿Seguro? Esto descontará el insumo del stock.', async () => {
                 try {
+                    // CORRECCIÓN: Usar writeBatch para operación atómica
+                    const batch = writeBatch(db);
+
                     // 1. Borrar la compra
                     const docRef = doc(db, `users/${userId}/purchases`, id);
-                    await deleteDoc(docRef);
+                    batch.delete(docRef);
                     
                     // 2. Descontar del stock
-                    await updateInventoryStock(-amountKg);
+                    const invRef = doc(db, `users/${userId}/inventory/main`);
+                    batch.set(invRef, { foodStockKg: increment(-amountKg) }, { merge: true });
+                    
+                    await batch.commit();
                     
                     showToast('Compra borrada.');
                 } catch (error) {
@@ -1079,20 +1119,9 @@
         }
         
         // Actualizar el stock (sumar o restar)
-        async function updateInventoryStock(amount) {
-            if (!userId) return;
-            const docRef = doc(db, `users/${userId}/inventory/main`);
-            try {
-                // Usamos 'increment' para evitar problemas de concurrencia
-                // y 'setDoc' con 'merge: true' para crear el doc si no existe.
-                await setDoc(docRef, { 
-                    foodStockKg: increment(amount) 
-                }, { merge: true });
-            } catch (error) {
-                console.error("Error actualizando stock:", error);
-                showToast("Error crítico al actualizar stock.", "error");
-            }
-        }
+        // Esta función se reemplaza por las operaciones en batch,
+        // pero getInventoryStock() sigue siendo la fuente de verdad para leer.
+        
         
         // ---- Lógica de Configuración ----
         
@@ -1186,7 +1215,17 @@
             allHenLots.sort((a, b) => a.name.localeCompare(b.name));
             
             allHenLots.forEach(lot => {
-                const date = lot.dateAdded.toDate ? lot.dateAdded.toDate() : new Date(lot.dateAdded);
+                // Comprobación de seguridad para dateAdded
+                let date;
+                if (lot.dateAdded && typeof lot.dateAdded.toDate === 'function') {
+                    date = lot.dateAdded.toDate();
+                } else if (lot.dateAdded) {
+                    // Fallback por si acaso es un string (aunque no debería)
+                    date = new Date(lot.dateAdded); 
+                } else {
+                    date = new Date(); // Fallback
+                }
+                
                 const totalAnimals = lot.henCount + lot.roosterCount;
                 const lotCard = `
                     <div class="bg-white p-5 rounded-lg shadow-md">
@@ -1475,6 +1514,8 @@
             const currentMonth = now.getMonth();
             
             const filterByCurrentMonth = (item) => {
+                // Comprobación de seguridad
+                if (!item.date || typeof item.date.toDate !== 'function') return false; 
                 const itemDate = item.date.toDate();
                 return itemDate.getFullYear() === currentYear && itemDate.getMonth() === currentMonth;
             };
@@ -1539,6 +1580,8 @@
             
             // Agrupar huevos por mes (YYYY-MM)
             const eggsByMonth = allDailyRecords.reduce((acc, record) => {
+                // Comprobación de seguridad
+                if (!record.date || typeof record.date.toDate !== 'function') return acc;
                 const date = record.date.toDate();
                 const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
                 if (!acc[monthKey]) {
@@ -1639,6 +1682,8 @@
             
             // Filtros de fecha
             const filterFn = (item) => {
+                // Comprobación de seguridad
+                if (!item.date || typeof item.date.toDate !== 'function') return false;
                 const itemDate = item.date.toDate();
                 if (period === 'annual') {
                     return itemDate.getFullYear() === year;
@@ -1702,14 +1747,21 @@
             });
 
             // Ordenar por fecha
-            data = [data[0], ...data.slice(1).sort((a, b) => new Date(a[0]) - new Date(b[0]))];
+            data = [data[0], ...data.slice(1).sort((a, b) => {
+                // Convertir dd/mm/yyyy a mm/dd/yyyy para ordenar
+                const [dayA, monthA, yearA] = a[0].split('/');
+                const [dayB, monthB, yearB] = b[0].split('/');
+                const dateA = new Date(`${monthA}/${dayA}/${yearA}`);
+                const dateB = new Date(`${monthB}/${dayB}/${yearB}`);
+                return dateA - dateB;
+            })];
 
             downloadCSV(data, `${filename}.csv`);
         }
         
         // Función para descargar el CSV
         function downloadCSV(data, filename) {
-            let csvContent = "data:text/csv;charset=utf-f8,";
+            let csvContent = "data:text/csv;charset=utf-8,";
             
             data.forEach(rowArray => {
                 // Escapar comas y comillas
